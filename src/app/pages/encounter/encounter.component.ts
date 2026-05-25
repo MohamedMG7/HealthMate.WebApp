@@ -22,7 +22,6 @@ import { PopupMessageService } from '../../services/popup-message.service';
 export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('areaChartRef', { static: false }) areaChartRef!: ElementRef;
   @ViewChild('chatScrollContainer') chatScrollContainer!: ElementRef;
-  @ViewChild('chatTextarea') chatTextarea!: ElementRef;
   
 
   showPopup = false;
@@ -31,7 +30,6 @@ export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
   profileImage: string = 'assets/images/default.png';
   documents: any[] = [];
   appointmentHistory: any[] = [];
-  chatbotReferences: string[] = [];
   token: string = '';
   errorMessage = '';
   private chart: any = null;
@@ -51,7 +49,6 @@ export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.initializeComponent();
     //this.setupEndEncounterButton();
-    this.loadChatbotReferences();
   }
   goToEncounterDetails(encounterId: number): void {
     this.router.navigate(['/encounter-details', encounterId]);
@@ -382,136 +379,25 @@ export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
   chatbotOpen = false;
   chatPrompt = '';
   chatbotResponse = '';
+  chatbotAlerts: string[] = [];
+  private sinaSessionId: string | null = null;
   isLoading = false;
-  
-  // Autocomplete properties
-  showSuggestions = false;
-  filteredSuggestions: string[] = [];
-  selectedSuggestionIndex = -1;
-  atSymbolPosition = -1;
 
   toggleChatbot(): void {
     this.chatbotOpen = !this.chatbotOpen;
     this.chatbotResponse = '';
     this.chatPrompt = '';
-    this.hideSuggestions();
   
-    // 👉 Load references again when opening, in case they weren’t loaded yet
-    if (this.chatbotOpen && this.chatbotReferences.length === 0) {
-      this.loadChatbotReferences();
+    if (this.chatbotOpen && !this.sinaSessionId) {
+      this.openSinaSession();
     }
-  }
-
-  onTextareaInput(event: Event): void {
-    const textarea = event.target as HTMLTextAreaElement;
-    const value = textarea.value;
-    const cursorPosition = textarea.selectionStart || 0;
-    
-    this.chatPrompt = value;
-    this.handleAutocomplete(value, cursorPosition);
-  }
-
-  onTextareaKeydown(event: KeyboardEvent): void {
-    if (!this.showSuggestions) return;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        this.selectedSuggestionIndex = Math.min(
-          this.selectedSuggestionIndex + 1,
-          this.filteredSuggestions.length - 1
-        );
-        break;
-      
-      case 'ArrowUp':
-        event.preventDefault();
-        this.selectedSuggestionIndex = Math.max(this.selectedSuggestionIndex - 1, 0);
-        break;
-      
-      case 'Enter':
-      case 'Tab':
-        if (this.selectedSuggestionIndex >= 0) {
-          event.preventDefault();
-          this.selectSuggestion(this.filteredSuggestions[this.selectedSuggestionIndex]);
-        }
-        break;
-      
-      case 'Escape':
-        this.hideSuggestions();
-        break;
-    }
-  }
-
-  private handleAutocomplete(value: string, cursorPosition: number): void {
-    // Find the last @ symbol before the cursor
-    const textBeforeCursor = value.substring(0, cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    
-    if (lastAtIndex === -1) {
-      this.hideSuggestions();
-      return;
-    }
-
-    // Check if there's a space between @ and cursor (which would end the autocomplete)
-    const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-    if (textAfterAt.includes(' ')) {
-      this.hideSuggestions();
-      return;
-    }
-
-    // Show suggestions
-    this.atSymbolPosition = lastAtIndex;
-    const searchTerm = textAfterAt.toLowerCase();
-    
-    this.filteredSuggestions = this.chatbotReferences.filter(ref => 
-      ref.toLowerCase().includes(searchTerm)
-    );
-    
-    this.showSuggestions = this.filteredSuggestions.length > 0;
-    this.selectedSuggestionIndex = 0;
-  }
-
-  selectSuggestion(suggestion: string): void {
-    const textarea = this.chatTextarea.nativeElement;
-    const cursorPosition = textarea.selectionStart || 0;
-    const textBeforeCursor = this.chatPrompt.substring(0, cursorPosition);
-    const textAfterCursor = this.chatPrompt.substring(cursorPosition);
-    
-    // Find the @ symbol position
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    if (lastAtIndex === -1) return;
-    
-    // Replace from @ to cursor with the suggestion
-    const newValue = 
-      this.chatPrompt.substring(0, lastAtIndex) + 
-      suggestion + 
-      ' ' + 
-      textAfterCursor;
-    
-    this.chatPrompt = newValue;
-    
-    // Set cursor position after the inserted suggestion
-    setTimeout(() => {
-      const newCursorPosition = lastAtIndex + suggestion.length + 1;
-      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
-      textarea.focus();
-    });
-    
-    this.hideSuggestions();
-  }
-
-  private hideSuggestions(): void {
-    this.showSuggestions = false;
-    this.filteredSuggestions = [];
-    this.selectedSuggestionIndex = -1;
-    this.atSymbolPosition = -1;
   }
 
   sendPrompt(event: Event): void {
     event.preventDefault();
-    if (!this.chatPrompt.trim()) return;
+    const content = this.chatPrompt.trim();
+    if (!content) return;
   
-    this.hideSuggestions(); // Hide suggestions when sending
     this.isLoading = true;
     this.chatbotResponse = '';
   
@@ -527,21 +413,58 @@ export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
   
-    const body = {
-      prompt: this.chatPrompt.trim()
+    const sendMessage = () => {
+      const url = `${BASE_URL}Sina/sessions/${this.sinaSessionId}/messages`;
+      this.http.post<{ reply: string }>(url, { content }, { headers }).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.chatPrompt = '';
+          this.typeResponse(response.reply);
+        },
+        error: (err) => {
+          console.error('Chatbot error:', err);
+          this.chatbotResponse = 'Error: could not reach Sina.';
+          this.isLoading = false;
+        }
+      });
     };
-  
-    const url = `${BASE_URL}Sina/ask-with-mcp?patientId=${patientId}`;
-  
-    this.http.post<{ reply: string }>(url, body, { headers }).subscribe({
+
+    if (!this.sinaSessionId) {
+      this.http.post<{ sessionId: string; alerts: { message: string }[] }>(`${BASE_URL}Sina/sessions`, { patientId }, { headers }).subscribe({
+        next: (response) => {
+          this.sinaSessionId = response.sessionId;
+          this.chatbotAlerts = response.alerts?.map(alert => alert.message) || [];
+          sendMessage();
+        },
+        error: (err) => {
+          console.error('Failed to open Sina session:', err);
+          this.chatbotResponse = 'Error: could not start Sina session.';
+          this.isLoading = false;
+        }
+      });
+      return;
+    }
+
+    sendMessage();
+  }
+
+  private openSinaSession(): void {
+    const patientId = this.encounterService.getPatientId();
+    if (!patientId) return;
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.token}`
+    });
+
+    this.http.post<{ sessionId: string; alerts: { message: string }[] }>(`${BASE_URL}Sina/sessions`, { patientId }, { headers }).subscribe({
       next: (response) => {
-        this.isLoading = false;
-        this.typeResponse(response.reply);
+        this.sinaSessionId = response.sessionId;
+        this.chatbotAlerts = response.alerts?.map(alert => alert.message) || [];
       },
       error: (err) => {
-        console.error('Chatbot error:', err);
-        this.chatbotResponse = 'Error: could not reach Sina.';
-        this.isLoading = false;
+        console.error('Failed to open Sina session:', err);
+        this.chatbotResponse = 'Error: could not start Sina session.';
       }
     });
   }
@@ -570,36 +493,4 @@ export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  loadChatbotReferences(): void {
-    const cached = this.encounterService.getChatbotReferences();
-    if (cached) {
-      this.chatbotReferences = cached;
-      return;
-    }
-  
-    const patientId = this.encounterService.getPatientId();
-    if (!patientId) return;
-  
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.token}`,
-      'Accept': 'application/json'
-    });
-  
-    this.http.get<any>(`${BASE_URL}Sina/references/${patientId}`, { headers }).subscribe({
-      next: (data) => {
-        // Fixed the prefixes to match your backend expectations
-        const prescriptions = data.prescriptions?.map((id: string) => `@Prescription-${id}`) || [];
-        const observations = data.observations?.map((id: string) => `@Observation-${id}`) || [];
-        const labTests = data.labTests?.map((id: string) => `@LabTest-${id}`) || [];
-  
-        const allRefs = [...prescriptions, ...observations, ...labTests];
-        this.chatbotReferences = allRefs;
-        this.encounterService.setChatbotReferences(allRefs);
-      },
-      error: (err) => {
-        console.error('Failed to load chatbot references', err);
-      }
-    });
-  }
-  
 }

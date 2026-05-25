@@ -386,6 +386,13 @@
                         @if (chatbotResponse) {
                           <p class="text-gray-700 whitespace-pre-wrap">{{ chatbotResponse }}</p>
                         }
+                        @if (chatbotAlerts.length > 0) {
+                          <div class="mb-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                            @for (alert of chatbotAlerts; track alert) {
+                              <p class="mb-1 last:mb-0">{{ alert }}</p>
+                            }
+                          </div>
+                        }
                         @if (isLoading) {
                           <p class="text-sm text-gray-400 italic">Sina is thinking...</p>
                         }
@@ -395,32 +402,13 @@
                       <form (submit)="sendPrompt($event)" class="flex flex-col gap-3">
                         <div class="relative">
                           <textarea
-                            #chatTextarea
                             [(ngModel)]="chatPrompt"
                             name="chatPrompt"
-                            placeholder="Ask Sina... (Type @ to reference data)"
+                            placeholder="Ask Sina about this patient..."
                             rows="4"
-                            (input)="onTextareaInput($event)"
-                            (keydown)="onTextareaKeydown($event)"
                             class="w-full border border-gray-300 rounded p-3 focus:outline-none focus:border-teal-500 resize-none text-[16px]"
                             required>
                           </textarea>
-
-                          <!-- Autocomplete Suggestions -->
-                          @if (showSuggestions) {
-                            <div
-                class="absolute bottom-full left-0 right-0 bg-white border border-gray-300 rounded-t shadow-lg 
-                        max-h-48 overflow-y-auto z-50 scrollbar-thin scrollbar-thumb-gray-300">
-                              @for (suggestion of filteredSuggestions; track suggestion; let i = $index) {
-                                <div
-                                  (click)="selectSuggestion(suggestion)"
-                                  [class.bg-teal-100]="i === selectedSuggestionIndex"
-                                  class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0">
-                                  <span class="text-sm font-medium text-gray-700">{{ suggestion }}</span>
-                                </div>
-                              }
-                            </div>
-                          }
                         </div>
 
                         <button type="submit"

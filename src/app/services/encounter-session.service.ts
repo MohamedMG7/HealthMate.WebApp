@@ -8,15 +8,6 @@ import { SessionService } from './session.service';
 })
 export class EncounterSessionService {
 
-  private chatbotReferences: string[] | null = null;
-  setChatbotReferences(refs: string[]): void {
-    this.chatbotReferences = refs;
-  }
-  
-  getChatbotReferences(): string[] | null {
-    return this.chatbotReferences;
-  }
-
   private cachedPatientData: any = null;
 
   setCachedPatientData(data: any) {
