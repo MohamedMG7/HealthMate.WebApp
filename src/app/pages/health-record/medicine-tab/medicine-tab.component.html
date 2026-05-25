@@ -1,0 +1,24 @@
+<div class="max-h-[400px] overflow-y-auto rounded border border-teal-700 scrollbar-hidden">
+  <table class="w-full table-auto">
+    <thead class="bg-teal-800 text-white sticky top-0">
+      <tr>
+        <th class="p-2">Name</th>
+        <th class="p-2">Date</th>
+        <th class="p-2">Dose</th>
+        <th class="p-2">Duration (days)</th>
+        <th class="p-2">Frequency (hrs)</th>
+      </tr>
+    </thead>
+    <tbody class="text-sm text-gray-700 text-center">
+      @for (med of medicines; track med) {
+        <tr class="border-b rounded-3xl border-teal-700">
+          <td class="py-4">{{ med.name }}</td>
+          <td class="p-2">{{ med.date | date: 'dd/MM/yyyy' }}</td>
+          <td class="p-2">{{ med.dosePerTime }}</td>
+          <td class="p-2">{{ med.durationInDays }}</td>
+          <td class="p-2">{{ med.frequencyInHours }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

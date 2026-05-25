@@ -1,0 +1,29 @@
+<div class="max-h-[400px] overflow-y-auto rounded border border-teal-700 scrollbar-hidden">
+  <table class="w-full table-auto">
+    <thead class="bg-teal-800 text-white sticky top-0">
+      <tr>
+        <th class="p-2">Date</th>
+        <th class="p-2">Condition</th>
+        <th class="p-2">Publisher</th>
+      </tr>
+    </thead>
+    <tbody class="text-sm text-gray-700 text-center">
+      @for (prescription of prescriptions; track prescription) {
+        <tr
+          class="border-b border-teal-700 cursor-pointer"
+          (click)="onPrescriptionClick(prescription.prescriptionId)">
+          <td class="p-2">{{ prescription.prescriptionDate | date: 'dd/MM/yyyy' }}</td>
+          <td class="py-4">{{ prescription.conditionName }}</td>
+          <td class="p-2">{{ prescription.publisher }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="text-center flex justify-center items-center my-4 border-b border-teal-700 py-3 rounded-3xl">
+  <a routerLink="/prescription-add" class="flex items-center gap-1 text-teal-800 font-semibold">
+    <img src="assets/icons/gridicons_add.png" class="w-5 h-5" />
+    Add prescription
+  </a>
+</div>

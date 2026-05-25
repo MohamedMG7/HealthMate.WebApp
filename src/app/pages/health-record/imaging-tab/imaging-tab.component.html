@@ -1,0 +1,22 @@
+<div class="max-h-[400px] overflow-y-auto rounded border border-teal-700 scrollbar-hidden">
+  <table class="w-full table-auto">
+    <thead class="bg-teal-800 text-white sticky top-0">
+      <tr>
+        <th class="p-2">Name</th>
+        <th class="p-2">Date</th>
+      </tr>
+    </thead>
+    <tbody class="text-sm text-gray-700 text-center">
+      @for (image of images; track image) {
+        <tr
+          class="border-b rounded-3xl border-teal-700 cursor-pointer"
+          (click)="onImageClick(image.medicalImageId)">
+          <td class="py-4">{{ image.medicalImageName }}</td>
+          <td class="p-2">{{ image.medicalImageDate | date: 'dd/MM/yyyy' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+

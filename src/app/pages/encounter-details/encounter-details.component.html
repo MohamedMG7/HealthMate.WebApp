@@ -1,0 +1,109 @@
+<div class="p-6 min-h-screen bg-[#e9e9e9]">
+  <!-- Top bar -->
+  <div class="flex items-center justify-between mb-6">
+    <button class="flex items-center text-2xl font-bold text-gray-800 gap-2" routerLink="/encounter">
+      <img src="../assets/icons/fluent-mdl2_navigate-back.png" class="w-7 h-7" />
+      Encounter
+    </button>
+
+    <select class="text-sm text-teal-600 rounded-md px-2 py-1 bg-transparent focus:ring-2 focus:ring-teal-500">
+      <option value="en-us">English (US)</option>
+      <option value="ar">Arabic (AR)</option>
+      <option value="fr">French (FR)</option>
+    </select>
+  </div>
+
+  <!-- Patient Info -->
+  <div class="flex flex-wrap justify-between mb-4 gap-4">
+    <div>
+      <label class="text-xl text-teal-600 font-bold mr-3">Patient ID</label>
+      <input type="text" [value]="patientId" class="border rounded px-3 py-1 w-60" readonly />
+    </div>
+    <div>
+      <label class="text-xl text-teal-600 font-bold mr-3">Patient Name</label>
+      <input type="text" [value]="patientName" class="border rounded px-3 py-1 w-60" readonly />
+    </div>
+    <div>
+      <label class="text-xl text-teal-600 font-bold mr-3">Doctor Name</label>
+      <input type="text" [value]="doctorName" class="border rounded px-3 py-1 w-60" readonly />
+    </div>
+    <div>
+      <label class="text-xl text-teal-600 font-bold mr-3">Encounter Date</label>
+      <input type="text" [value]="date" class="border rounded px-3 py-1 w-60" readonly />
+    </div>
+  </div>
+
+
+  <div class="border border-teal-700 rounded-xl p-5 mt-6 bg-[#e9e9e9]">
+    <h2 class="text-xl font-semibold text-teal-700 mb-4 text-center">Encounter Overview</h2>
+    <div class="space-y-2 text-gray-800">
+      <p><strong>Reason to Visit:</strong> {{ reasonToVisit || 'N/A' }}</p>
+      <p><strong>Treatment Plan:</strong> {{ treatmentPlan || 'N/A' }}</p>
+      <p><strong>Note:</strong> {{ note || 'N/A' }}</p>
+    </div>
+  </div>
+
+  <!-- Conditions -->
+  <div class="border border-teal-700 rounded-xl p-5 mt-10">
+    <h2 class="font-semibold text-2xl mb-4 text-center">Conditions</h2>
+    <table class="w-full table-auto border rounded overflow-hidden">
+      <thead class="bg-teal-800 text-white">
+        <tr>
+          <th class="p-2">Disease</th>
+          <th class="p-2">Severity</th>
+          <th class="p-2">Clinical Status</th>
+          <th class="p-2">Recorded By</th>
+          <th class="p-2">Date</th>
+          <th class="p-2">Note</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm text-gray-700 text-center">
+        @for (condition of conditions; track condition) {
+          <tr class="border-b border-teal-700">
+            <td class="py-4">{{ condition.diseaseName }}</td>
+            <td class="p-2">{{ condition.severity }}</td>
+            <td class="p-2">{{ condition.clinicalStatus }}</td>
+            <td class="p-2">{{ condition.recorder }}</td>
+            <td class="p-2">{{ condition.dateRecorded }}</td>
+            <td class="p-2">{{ condition.note }}</td>
+          </tr>
+        }
+        @if (conditions.length === 0) {
+          <tr>
+            <td colspan="6" class="py-4 text-gray-500">No conditions recorded</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Prescriptions -->
+  <div class="border border-teal-700 rounded-xl p-5 mt-10">
+    <h2 class="font-semibold text-2xl mb-4 text-center">Prescriptions</h2>
+    <table class="w-full table-auto border rounded overflow-hidden">
+      <thead class="bg-teal-800 text-white">
+        <tr>
+          <th class="p-2">Medicine</th>
+          <th class="p-2">Dose</th>
+          <th class="p-2">Frequency (hrs)</th>
+          <th class="p-2">Duration (days)</th>
+        </tr>
+      </thead>
+      <tbody class="text-sm text-gray-700 text-center">
+        @for (med of prescription; track med) {
+          <tr class="border-b border-teal-700">
+            <td class="py-4">{{ med.name }}</td>
+            <td class="p-2">{{ med.dose }}</td>
+            <td class="p-2">{{ med.frequencyInHours }}</td>
+            <td class="p-2">{{ med.durationInDays }}</td>
+          </tr>
+        }
+        @if (prescription.length === 0) {
+          <tr>
+            <td colspan="4" class="py-4 text-gray-500">No medicines prescribed</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

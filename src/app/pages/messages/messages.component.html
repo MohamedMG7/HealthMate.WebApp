@@ -1,0 +1,59 @@
+<div class="p-4">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">Inbox</h1>
+    <button
+      routerLink="/message-compose"
+      class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+      >
+      + Compose
+    </button>
+  </div>
+
+  @if (loading) {
+    <div class="text-gray-600">Loading messages...</div>
+  }
+
+  @if (!loading && messages.length > 0) {
+    <table class="w-full text-left border">
+      <thead>
+        <tr>
+          <th class="p-2 border w-12"></th> <!-- icon column -->
+          <th class="p-2 border">Subject</th>
+          <th class="p-2 border">Sender</th>
+          <th class="p-2 border">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (msg of messages; track msg) {
+          <tr
+            (click)="viewMessage(msg.id)"
+            class="cursor-pointer hover:bg-gray-100"
+            >
+            <td class="p-2 border text-center">
+              <span
+            [ngClass]="{
+              'text-red-600': !msg.isRead,
+              'text-gray-400': msg.isRead
+            }"
+                class="text-xl"
+                >
+                {{ msg.isRead ? '📬' : '📩' }}
+              </span>
+            </td>
+            <td class="p-2 border" [ngClass]="{ 'font-bold': !msg.isRead }">
+              {{ msg.subject }}
+            </td>
+            <td class="p-2 border">{{ msg.senderName }}</td>
+            <td class="p-2 border">{{ msg.date }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  @if (!loading && messages.length === 0) {
+    <div class="text-gray-500">
+      No messages found.
+    </div>
+  }
+</div>

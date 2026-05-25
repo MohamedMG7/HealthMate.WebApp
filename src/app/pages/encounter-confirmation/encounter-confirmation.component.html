@@ -1,0 +1,144 @@
+<div class="h-screen overflow-y-auto p-6 space-y-8 bg-gray-50">
+  <!-- Header: Back + Title + Language -->
+  <div class="flex items-center justify-between mb-4">
+    <button class="flex items-center text-2xl font-bold text-gray-800 gap-2"
+      (click)="router.navigate(['/encounter'])">
+      <img src="../assets/icons/fluent-mdl2_navigate-back.png" class="w-7 h-7" />
+      Confirm Encounter
+    </button>
+
+    <select class="text-sm text-teal-600 rounded-md px-2 py-1 bg-transparent focus:ring-2 focus:ring-teal-500">
+      <option value="en-us">English (US)</option>
+      <option value="ar">Arabic (AR)</option>
+      <option value="fr">French (FR)</option>
+    </select>
+  </div>
+
+  <!-- Reason / Treatment / Note -->
+  <div class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Reason to Visit</label>
+      <textarea [(ngModel)]="encounterInfo.reasonToVisit" rows="2" class="w-full border rounded p-2"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Treatment Plan</label>
+      <textarea [(ngModel)]="encounterInfo.treatmentPlan" rows="2" class="w-full border rounded p-2"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Note</label>
+      <textarea [(ngModel)]="encounterInfo.note" rows="2" class="w-full border rounded p-2"></textarea>
+    </div>
+  </div>
+
+  <!-- Prescriptions -->
+  <div>
+    <h2 class="text-xl font-semibold mb-2">Prescriptions</h2>
+    <table class="min-w-full bg-white border">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="text-left px-4 py-2 border">Medicine</th>
+          <th class="text-left px-4 py-2 border">Dosage</th>
+          <th class="text-left px-4 py-2 border">Frequency (h)</th>
+          <th class="text-left px-4 py-2 border">Duration (days)</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of prescriptions; track p) {
+          <tr>
+            <td class="border px-4 py-2">{{ getMedicineNameById(p.medicineId) }}</td>
+            <td class="border px-4 py-2">{{ p.dosage }}</td>
+            <td class="border px-4 py-2">{{ p.frequencyInHours }}</td>
+            <td class="border px-4 py-2">{{ p.durationInDays }}</td>
+          </tr>
+        }
+        @if (prescriptions.length === 0) {
+          <tr>
+            <td colspan="4" class="text-center text-gray-500 py-2">No prescriptions</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Conditions -->
+  <div>
+    <h2 class="text-xl font-semibold mb-2">Condition</h2>
+    @if (condition) {
+      <div class="border p-4 rounded bg-gray-50">
+        <p><strong>Disease:</strong> {{ condition.diseaseName }}</p>
+        <p><strong>Severity:</strong> {{ condition.severity }}</p>
+        <p><strong>Note:</strong> {{ condition.note }}</p>
+        <p><strong>Date Recorded:</strong> {{ condition.dateRecorded | date }}</p>
+      </div>
+    } @else {
+      <p class="text-gray-500">No condition recorded.</p>
+    }
+  </div>
+
+  <!-- Observations -->
+  <div>
+    <h2 class="text-xl font-semibold mb-2">Observations</h2>
+    <table class="min-w-full bg-white border">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="text-left px-4 py-2 border">Observation</th>
+          <th class="text-left px-4 py-2 border">Value</th>
+          <th class="text-left px-4 py-2 border">Unit</th>
+          <th class="text-left px-4 py-2 border">Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (o of observations; track o) {
+          <tr>
+            <td class="border px-4 py-2">{{ o.ObservationName }}</td>
+            <td class="border px-4 py-2">{{ o.valueQuanitity }}</td>
+            <td class="border px-4 py-2">{{ o.valueUnit }}</td>
+            <td class="border px-4 py-2">{{ o.interpertation }}</td>
+          </tr>
+        }
+        @if (observations.length === 0) {
+          <tr>
+            <td colspan="4" class="text-center text-gray-500 py-2">No observations</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Lab Tests -->
+  <div>
+    <h2 class="text-xl font-semibold mb-2">Lab Tests</h2>
+    @if (labTest) {
+      <div class="border p-4 rounded bg-gray-50 space-y-2">
+        <p><strong>Test Name:</strong> {{ labTest.labTestName }}</p>
+        <p><strong>Recorded Time:</strong> {{ labTest.recordedTime | date }}</p>
+        <p><strong>Note:</strong> {{ labTest.note }}</p>
+        <table class="min-w-full bg-white border mt-2">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="text-left px-4 py-2 border">Attribute</th>
+              <th class="text-left px-4 py-2 border">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of labTest.results; track r) {
+              <tr>
+                <td class="border px-4 py-2">{{ r.attributeName }}</td>
+                <td class="border px-4 py-2">{{ r.value }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="text-gray-500">No lab test recorded.</p>
+    }
+  </div>
+
+  <!-- Submit Button -->
+  <div class="flex justify-end mt-8">
+    <button class="bg-teal-700 text-white px-6 py-2 rounded" (click)="submitEncounter()">
+      Confirm & Submit
+    </button>
+  </div>
+</div>

@@ -1,0 +1,444 @@
+<div class="bg-gray-50 text-gray-800">
+  <main class="flex h-screen">
+    <div class="flex-1 w-full relative overflow-y-auto">
+
+      <!-- Popup Overlay - Only covers the main content area -->
+      @if (showPopup) {
+        <div
+          class="absolute z-40 inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center"
+                style="background: linear-gradient(135deg, 
+                    rgba(16, 185, 129, 0.4) 0%, 
+                    rgba(34, 197, 94, 0.6) 25%, 
+                    rgba(132, 204, 22, 0.5) 50%, 
+                    rgba(163, 230, 53, 0.7) 75%, 
+                    rgba(20, 184, 166, 0.4) 100%),
+                    radial-gradient(circle at 30% 20%, rgba(74, 222, 128, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(167, 243, 208, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 40%, rgba(52, 211, 153, 0.2) 0%, transparent 50%);">
+          <!-- Animated floating elements -->
+          <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute w-32 h-32 bg-green-400 rounded-full opacity-20 animate-pulse"
+            style="top: 10%; left: 20%; animation-delay: 0s; animation-duration: 3s;"></div>
+            <div class="absolute w-24 h-24 bg-lime-300 rounded-full opacity-30 animate-pulse"
+            style="top: 60%; right: 15%; animation-delay: 1s; animation-duration: 4s;"></div>
+            <div class="absolute w-20 h-20 bg-emerald-400 rounded-full opacity-25 animate-pulse"
+            style="bottom: 20%; left: 60%; animation-delay: 2s; animation-duration: 3.5s;"></div>
+            <div class="absolute w-16 h-16 bg-green-300 rounded-full opacity-20 animate-pulse"
+            style="top: 30%; right: 40%; animation-delay: 0.5s; animation-duration: 2.5s;"></div>
+          </div>
+          <!-- Modal content -->
+          <div class="relative w-[60%] max-w-[550px] h-auto bg-white rounded-xl shadow-2xl p-8">
+            <h2 class="text-center font-bold text-2xl text-teal-700 mb-6">New Encounter</h2>
+            <p class="mb-6 font-bold text-xl text-center">Patient ID</p>
+            <form (ngSubmit)="onSearchSubmit()" class="space-y-6">
+              <div>
+                <input
+                  type="text"
+                  [(ngModel)]="patientId"
+                  name="patientId"
+                  (input)="clearError()"
+                  class="py-3 px-3 w-full rounded-lg border border-gray-300 focus:border-teal-500 focus:outline-none text-lg"
+                  placeholder="Enter Patient ID"
+                  required />
+                </div>
+                @if (errorMessage) {
+                  <div class="text-red-500 text-sm text-center">
+                    {{ errorMessage }}
+                  </div>
+                }
+                <div>
+                  <button
+                    type="submit"
+                    class="bg-teal-700 hover:bg-teal-800 font-semibold text-xl py-3 px-4 rounded-lg w-full text-white transition-colors">
+                    Search
+                  </button>
+                  <h3>use id => 1</h3>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <div class="md:hidden p-1 flex justify-end">
+          <button id="toggleSidebar" class="bg-teal-800 text-white px-4 py-2 rounded">
+            navigate
+          </button>
+        </div>
+
+        <div class="min-h-screen p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+
+              <!--widgets-->
+              <div class="flex items-center justify-between flex-wrap">
+                <!--widget box-->
+                <div class="flex flex-col bg-white rounded-xl w-full md:w-[30%] p-3 mb-2">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="bg-[#e5fafd] flex items-center justify-center rounded-full w-14 h-14 select-none cursor-default">
+                      <img src="../assets/icons/blood-drop.png" class="w-7 h-7 select-none cursor-default" />
+                    </div>
+
+                    <!-- Tooltip Wrapper -->
+                    @if (shouldShowNotUpdated(patientData?.bloodPressure)) {
+                      <div class="relative group">
+                        <img src="../assets/icons/exclamationmark-circle-fill.png"
+                          class="w-7 h-7 cursor-pointer" />
+                          <div
+                                            class="absolute right-full top-1/2 -translate-y-1/2 mr-2 hidden group-hover:block 
+                                                   bg-gray-700 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
+                            This means it's not updated
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <p>Blood Pressure</p>
+                    <p class="text-xl font-bold" id="blood-pressure">{{ patientData?.bloodPressure?.averageSystolic }} / {{ patientData?.bloodPressure?.averageDiastolic }}</p>
+
+                    <div id="blood-status" class="flex items-center gap-2 text-[#a2a2a2] mt-3">
+                    </div>
+                  </div>
+
+                  <!-- Heart Rate Widget-->
+                  <div class="flex flex-col bg-white rounded-xl w-full md:w-[30%] p-3 mb-2">
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="bg-[#e5fafd] flex items-center justify-center rounded-full w-14 h-14 select-none cursor-default">
+                        <img src="../assets/icons/icon-park-outline_heart-rate.png" class="w-7 h-7 select-none cursor-default" />
+                      </div>
+
+                      <!-- Tooltip Wrapper -->
+                      @if (shouldShowNotUpdated(patientData?.heartRate)) {
+                        <div class="relative group">
+                          <img src="../assets/icons/exclamationmark-circle-fill.png" class="w-7 h-7 cursor-pointer" />
+                          <div
+                                      class="absolute right-full top-1/2 -translate-y-1/2 mr-2 hidden group-hover:block
+                                             bg-gray-700 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
+                            This means it's not updated
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <p>Heart Rate</p>
+                    <p class="text-xl font-bold" id="heart-rate">{{ patientData?.heartRate?.average }} bpm</p>
+
+                    <div id="heart-rate-status" class="flex items-center gap-2 text-[#a2a2a2] mt-3">
+                      <!-- Additional status info can go here if needed -->
+                    </div>
+                  </div>
+
+                  <!-- Glucose Level Widget-->
+                  <div class="flex flex-col bg-white rounded-xl w-full md:w-[30%] p-3 mb-2">
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="bg-[#e5fafd] flex items-center justify-center rounded-full w-14 h-14 select-none cursor-default">
+                        <img src="../assets/icons/material-symbols-light_glucose-outline-rounded.png"
+                          class="w-7 h-7 select-none cursor-default" />
+                        </div>
+
+                        <!-- Tooltip Wrapper -->
+                        <!-- Tooltip Wrapper -->
+                        @if (shouldShowNotUpdated(patientData?.glucose)) {
+                          <div class="relative group">
+                            <img src="../assets/icons/exclamationmark-circle-fill.png"
+                              class="w-7 h-7 cursor-pointer" />
+                              <!-- Tooltip -->
+                              <div
+                                            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block 
+                                                bg-gray-700 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
+                                This means it's not updated
+                              </div>
+                            </div>
+                          }
+                        </div>
+
+                        <p>Glucose Level</p>
+                        <p class="text-xl font-bold" id="glucose-level">{{ patientData?.glucose?.average }}</p>
+
+                        <div id="glucose-status" class="flex items-center gap-2 text-[#a2a2a2] mt-3">
+                          <!-- <img src="../assets/icons/arrow-circle-top.png" />
+                          <p>Higher than average</p> -->
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="grid grid-cols-1 md:grid-cols-[65%_35%] gap-4">
+                      <!-- Hemoglobin Chart -->
+                      <div class="border rounded-lg p-4 bg-white">
+                        <div class="flex items-center justify-between mb-4">
+                          <h2 class="text-lg font-bold">Hemoglobin</h2>
+                        </div>
+                        <div id="areaChart" #areaChartRef></div>
+                      </div>
+
+                      <!-- Mental Health -->
+                      <div class="border rounded-lg p-4 bg-white relative">
+                        <div class="flex items-center justify-between mb-3">
+                          <p class="text-lg font-semibold">Mental Health Status</p>
+
+                          <!-- Tooltip Wrapper -->
+                          <div class="relative group">
+                            <!-- Your custom question mark icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                              stroke-width="1.5" stroke="currentColor"
+                              class="w-6 h-6 text-gray-500 cursor-pointer">
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 
+                                               1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442
+                                               -.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0
+                                               9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                              </svg>
+
+                              <!-- Tooltip -->
+                                    <div class="absolute right-full top-1/2 -translate-y-1/2 mr-2 hidden group-hover:block
+                                                bg-gray-700 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
+                                Based on PHQ/GAD assessment tests
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="flex flex-col gap-2">
+                            <div>
+                              <p class="text-[#c5c5c5] font-semibold">Mood</p>
+                              <h2 class="text-xl font-bold">{{ patientData?.mentalHealthStatus?.mood || 'Not Available' }}</h2>
+                            </div>
+                            <div>
+                              <p class="text-[#c5c5c5] font-semibold">Anxiety</p>
+                              <h2 class="text-xl font-bold">{{ patientData?.mentalHealthStatus?.anxiety || 'Not Available' }}</h2>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!--content-->
+                      <div class="flex flex-wrap md:flex-nowrap gap-4 items-stretch">
+                        <!-- Most Recent Severe Condition -->
+                        <div id="MostRecentSevereCondition" class="flex flex-col bg-white rounded-lg p-4 w-full md:w-1/2">
+                          <h3 class="font-bold text-xl mb-4">Most Recent Severe Condition</h3>
+                          <div class="flex justify-between items-center mb-2">
+                            <div id="MRSC-code" class="flex flex-col gap-y-1">
+                              <p class="text-[#c5c5c5] text-lg font-semibold">code</p>
+                              <h4 class="text-xl font-bold">{{ patientData?.condition?.conditionCode || 'N/A' }}</h4>
+                            </div>
+                            <div id="MRSC-name" class="flex flex-col gap-y-1">
+                              <p class="text-[#c5c5c5] text-lg font-semibold">Name</p>
+                              <h4 class="text-xl font-bold">{{ patientData?.condition?.conditionName || 'N/A' }}</h4>
+                            </div>
+                          </div>
+                          <div class="flex justify-between items-center mt-auto">
+                            <div id="MRSC-diagnosis" class="flex flex-col gap-y-1">
+                              <p class="text-[#c5c5c5] text-lg font-semibold">Diagnosed</p>
+                              <h4 class="text-xl font-bold">{{patientData?.condition?.conditionDate || 'N/A'}}</h4>
+                            </div>
+                            <div id="MRSC-Note" class="flex flex-col gap-y-1">
+                              <p class="text-[#c5c5c5] text-lg font-semibold">Note</p>
+                              <h4 class="text-xl font-bold">{{patientData?.condition?.treatement || 'N/A'}}</h4>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Documents -->
+                        <div class="flex flex-col bg-white rounded-lg p-4 w-full md:w-1/2">
+                          <h3 class="font-bold text-xl mb-3">Documents</h3>
+
+                          @if (documents.length > 0) {
+                            <div class="p-2 flex-1 overflow-y-auto">
+                              @for (doc of documents; track doc) {
+                                <div
+                                  class="flex items-center gap-2 mb-4 cursor-pointer hover:bg-gray-100 p-2 rounded"
+                                  (click)="openDocument(doc)">
+                                  <div class="w-10 h-10 bg-[#61C4E980] rounded-full flex items-center justify-center">
+                                    <img src="../assets/icons/File_dock.png" alt="doc-icon" />
+                                  </div>
+                                  <div class="flex flex-col">
+                                    <h4 class="font-semibold text-xl">{{ doc.name }}</h4>
+                                    <p class="text-[#c5c5c5] font-bold">{{ doc.recordedTime }}</p>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          } @else {
+                            <div class="text-center text-gray-500 mt-auto">No documents available.</div>
+                          }
+
+                        </div>
+                      </div>
+
+                      <div class="text-center mt-6">
+                        <!-- <button id="endEncounterBtn" class="bg-teal-800 text-white px-6 py-3 rounded w-[18rem]">
+                        End Encounter
+                      </button> -->
+                      <button (click)="goToEncounterConfirmation()" class="bg-teal-800 text-white px-6 py-3 rounded w-[18rem]">
+                        End Encounter
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Right Column -->
+                  <div
+                    class="space-y-6 bg-white border border-2 rounded-lg p-[19px] fixed top-6 right-3 h-[95%] w-[26%] hidden md:flex">
+                    <!-- Doctor Card -->
+                    <div class=" text-center bg-white">
+                      <img [src]="profileImage" alt="Doctor"
+                        class="w-24 h-24 rounded-full mx-auto mb-2 border border-4 border-[#61c4e9]"
+                        id="patient-image" />
+
+                        <h3 class="text-lg font-bold" id="patient-name">{{ patientData?.patientGeneralInformation?.name }}</h3>
+
+                        <div class="flex flex-wrap items-center  ml-10 gap-y-5">
+                          <div class="flex items-center gap-2 w-[50%] ">
+                            <div class="flex rounded-full bg-[#61C4E980] w-8 h-8 items-center justify-center">
+                              <img src="../assets/icons/la_transgender.png" class="w-5 h-5" />
+                            </div>
+                            <div class="flex-col items-center">
+                              <p class="text-[#c5c5c5] font-semibold">Gender</p>
+                              <h5 class=" font-bold" id="patient-gender">{{ patientData?.patientGeneralInformation?.gender }}</h5>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2 w-[50%] ">
+                            <div class="flex rounded-full bg-[#61C4E980] w-8 h-8 items-center justify-center">
+                              <img src="../assets/icons/fluent_person-12-regular.png" class="w-5 h-5" />
+                            </div>
+                            <div class="flex-col items-center">
+                              <p class="text-[#c5c5c5] font-semibold">Age</p>
+                              <h5 class=" font-bold" id="patient-Age">{{ patientData?.patientGeneralInformation?.age }}</h5>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2 w-[50%] ">
+                            <div class="flex rounded-full bg-[#61C4E980] w-8 h-8 items-center justify-center">
+                              <img src="../assets/icons/ix_height.png" class="w-5 h-5" />
+                            </div>
+                            <div class="flex-col items-center">
+                              <p class="text-[#c5c5c5] font-semibold">Height</p>
+                              <h5 class=" font-bold" id="patient-height">{{ patientData?.patientGeneralInformation?.height }}</h5>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2 w-[50%]">
+                            <div class="flex rounded-full bg-[#61C4E980] w-8 h-8 items-center justify-center">
+                              <img src="../assets/icons/healthicons_weight-outline-24px.png"
+                                class="w-5 h-5" />
+                              </div>
+                              <div class="flex-col items-center">
+                                <p class="text-[#c5c5c5] font-semibold">Weight</p>
+                                <h5 class=" font-bold" id="patient-weight">{{ patientData?.patientGeneralInformation?.weight }}</h5>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="items-center justify-center mt-5">
+                            <button class="rounded-full bg-teal-700 text-white font-bold py-3 px-10"
+                            [routerLink]="'/healthrecord'">Health Record</button>
+                          </div>
+
+                          <div class="flex flex-col gap-y-5 overflow-y-auto items-center justify-center mt-5 px-4">
+                            @if (appointmentHistory.length > 0) {
+                              @for (appointment of appointmentHistory; track appointment) {
+                                <div
+                                  class="flex gap-3 items-center w-full cursor-pointer hover:bg-gray-100 p-2 rounded"
+                                  (click)="goToEncounterDetails(appointment.encounterId)">                                      <div class="rounded-full w-10 h-10 flex items-center justify-center bg-[#61C4E980]">
+                                  <img src="../assets/icons/mdi_fit-to-screen-outline.png" class="w-7 h-7" />
+                                </div>
+                                <div class="flex flex-col w-full">
+                                  <h2 class="font-bold">{{ appointment.hcpName }}</h2>
+                                  <div class="flex items-center justify-between">
+                                    <div class="flex flex-col items-start">
+                                      <p class="text-[#c5c5c5] text-sm">{{ appointment.hcpSpecialization }}</p>
+                                      <p class="text-[#c5c5c5] text-sm">{{ appointment.encounterDate }}</p>
+                                    </div>
+                                    <div>
+                                      <img src="../assets/icons/weui_arrow-filled.png" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            }
+                          } @else {
+                            <div class="text-center text-gray-500">No appointment history available.</div>
+                          }
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+
+                  <!-- chatbot -->
+                  <button (click)="toggleChatbot()"
+                    class="fixed top-6 right-6 z-50 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-full w-12 h-12 shadow-lg">
+                    💬
+                  </button>
+
+                  <!-- 🧠 Chatbot Side Panel -->
+                  <div [class.translate-x-full]="!chatbotOpen"
+                    class="fixed top-0 right-0 h-full w-[550px] bg-white shadow-2xl p-6 z-50 transform transition-transform duration-300">
+                    <div class="flex justify-between items-center mb-4">
+                      <div class="flex items-center gap-3">
+                        <img src="../../../assets/icons/SinaLogo.png" alt="Sina Logo" class="w-10 h-10 rounded-full" />
+                        <h2 class="text-2xl font-bold text-teal-700">Sina Chatbot</h2>
+                      </div>
+                      <button (click)="toggleChatbot()" class="text-gray-600 hover:text-red-500 font-bold text-2xl">&times;</button>
+                    </div>
+
+                    <div class="flex flex-col h-[90%]">
+                      <!-- Chat Output Area -->
+                      <div #chatScrollContainer
+                        class="flex-1 overflow-y-auto mb-4 border rounded p-3 bg-gray-50 scroll-smooth">
+                        @if (chatbotResponse) {
+                          <p class="text-gray-700 whitespace-pre-wrap">{{ chatbotResponse }}</p>
+                        }
+                        @if (isLoading) {
+                          <p class="text-sm text-gray-400 italic">Sina is thinking...</p>
+                        }
+                      </div>
+
+                      <!-- Input and Send -->
+                      <form (submit)="sendPrompt($event)" class="flex flex-col gap-3">
+                        <div class="relative">
+                          <textarea
+                            #chatTextarea
+                            [(ngModel)]="chatPrompt"
+                            name="chatPrompt"
+                            placeholder="Ask Sina... (Type @ to reference data)"
+                            rows="4"
+                            (input)="onTextareaInput($event)"
+                            (keydown)="onTextareaKeydown($event)"
+                            class="w-full border border-gray-300 rounded p-3 focus:outline-none focus:border-teal-500 resize-none text-[16px]"
+                            required>
+                          </textarea>
+
+                          <!-- Autocomplete Suggestions -->
+                          @if (showSuggestions) {
+                            <div
+                class="absolute bottom-full left-0 right-0 bg-white border border-gray-300 rounded-t shadow-lg 
+                        max-h-48 overflow-y-auto z-50 scrollbar-thin scrollbar-thumb-gray-300">
+                              @for (suggestion of filteredSuggestions; track suggestion; let i = $index) {
+                                <div
+                                  (click)="selectSuggestion(suggestion)"
+                                  [class.bg-teal-100]="i === selectedSuggestionIndex"
+                                  class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-200 last:border-b-0">
+                                  <span class="text-sm font-medium text-gray-700">{{ suggestion }}</span>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <button type="submit"
+                          [disabled]="isLoading"
+                          class="self-end bg-teal-700 hover:bg-teal-800 disabled:bg-gray-400 text-white px-6 py-2 rounded text-lg">
+                          @if (!isLoading) {
+                            <span>Send</span>
+                          }
+                          @if (isLoading) {
+                            <span>Sending...</span>
+                          }
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+
+                </div>
+              </div>
+            </main>
+          </div>
