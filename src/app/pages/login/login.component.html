@@ -15,7 +15,7 @@
         </h2>
 
         <!-- Form -->
-        <form class="space-y-5" (ngSubmit)="onSubmit($event)">
+        <form class="space-y-5" (ngSubmit)="onSubmit()">
           <div>
             <label class="block text-sm mb-1 text-gray-700">Email Address</label>
             <input
@@ -25,46 +25,49 @@
               [(ngModel)]="email"
               required
               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600" />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1 text-gray-700">Password</label>
-              <div class="relative">
-                <input
-                  [type]="showPassword ? 'text' : 'password'"
-                  placeholder="Enter your password"
-                  name="password"
-                  [(ngModel)]="password"
-                  required
-                  class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600" />
-                  <button
-                    type="button"
-                    (click)="togglePasswordVisibility()"
-                    class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600">
-                    <i [class]="showPassword ? 'fa fa-eye w-5 h-5' : 'fa fa-eye-slash w-5 h-5'"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Error Message -->
-              @if (loginError) {
-                <div class="text-red-600 text-sm text-center font-semibold">
-                  {{ loginError }}
-                </div>
-              }
-
-              <button
-                type="submit"
-                class="w-full cursor-pointer bg-teal-700 text-white py-2 rounded-md hover:bg-teal-800 transition duration-200">
-                Login
-              </button>
-            </form>
           </div>
-        </div>
 
-        <!-- Right: Image -->
-        <div class="hidden md:block w-2/3">
-          <img src="assets/images/auth.png" alt="Medical Illustration" class="w-full h-full object-cover" />
-        </div>
+          <div>
+            <label class="block text-sm mb-1 text-gray-700">Password</label>
+            <div class="relative">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                placeholder="Enter your password"
+                name="password"
+                [(ngModel)]="password"
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600" />
+              <button
+                type="button"
+                (click)="togglePasswordVisibility()"
+                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-600">
+                <i [class]="showPassword ? 'fa fa-eye w-5 h-5' : 'fa fa-eye-slash w-5 h-5'"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div *ngIf="loginError"
+            class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium">
+            <i class="fa fa-circle-exclamation text-red-500"></i>
+            {{ loginError }}
+          </div>
+
+          <button
+            type="submit"
+            [disabled]="isLoading || !email || !password"
+            class="w-full flex items-center justify-center gap-2 bg-teal-700 text-white py-2 rounded-md hover:bg-teal-800 transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed">
+            <span *ngIf="isLoading"
+              class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ isLoading ? 'Signing in…' : 'Login' }}</span>
+          </button>
+        </form>
       </div>
     </div>
+
+    <!-- Right: Image -->
+    <div class="hidden md:block w-2/3">
+      <img src="assets/images/auth.png" alt="Medical Illustration" class="w-full h-full object-cover" />
+    </div>
+  </div>
+</div>
