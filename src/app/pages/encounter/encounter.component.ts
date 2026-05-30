@@ -98,23 +98,6 @@ export class EncounterComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate(['/encounter-confirmation']);
   }
 
-  private async handleEndEncounter(): Promise<void> {
-    try {
-      const result = await this.encounterService.endEncounter();
-
-      if (result.success) {
-        this.popupService.showSuccess('Encounter ended successfully!');
-        this.resetComponentState();
-        this.showPopup = true;
-      } else {
-        alert('Failed to end encounter: ' + result.error);
-      }
-    } catch (error) {
-      console.error('Error in handleEndEncounter:', error);
-      this.popupService.showFailure('An error occurred while ending the encounter');
-    }
-  }
-
   private resetComponentState(): void {
     this.patientData = null;
     this.patientId = '';

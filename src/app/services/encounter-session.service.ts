@@ -1,7 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BASE_URL } from './config';
-import { SessionService } from './session.service';
 
 @Injectable({
   providedIn: 'root'
@@ -40,28 +37,27 @@ export class EncounterSessionService {
   private patientId: string = '';
   private patientName: string = '';
 
-  // attributes getters and setters
-  getPatientId(): string | undefined{
+  getPatientId(): string | undefined {
     return this.patientId;
   }
 
-  setPatientId(patinetId: string){
-    this.patientId = patinetId;
+  setPatientId(patientId: string) {
+    this.patientId = patientId;
   }
 
-  getPatientNationalId(): string | undefined{
+  getPatientNationalId(): string | undefined {
     return this.patientNationalId;
   }
 
-  setPatientNationalId(patientNationalId: string){
+  setPatientNationalId(patientNationalId: string) {
     this.patientNationalId = patientNationalId;
   }
 
-  getPatientName(): string | undefined{
+  getPatientName(): string | undefined {
     return this.patientName;
   }
 
-  setPatientName(patientName: string){
+  setPatientName(patientName: string) {
     this.patientName = patientName;
   }
 
@@ -75,10 +71,6 @@ export class EncounterSessionService {
     }
   };
 
-  
-  constructor(private http: HttpClient, private sessionService: SessionService) {}
-
-  // Use sessionStorage for persistence across navigation
   setOverlayShown(value: boolean): void {
     if (value) {
       sessionStorage.setItem('overlayShown', 'true');
@@ -99,7 +91,7 @@ export class EncounterSessionService {
     this.encounterSession.encounter.endDate = new Date().toISOString();
   }
 
-  setEncounterInfo(data: { reasonToVisit: string, treatmentPlan: string, note: string }) {
+  setEncounterInfo(data: { reasonToVisit: string; treatmentPlan: string; note: string }) {
     this.encounterSession.encounter = {
       ...this.encounterSession.encounter,
       reason_To_Visit: data.reasonToVisit,
@@ -124,45 +116,8 @@ export class EncounterSessionService {
     return this.encounterSession;
   }
 
-  async endEncounter(): Promise<any> {
-    try {
-      this.setEncounterEndDate();
-
-      const token = this.sessionService.getToken();
-      const patientId = this.getPatientId();
-      const hcpId = this.sessionService.getHealthcareProviderId();
-
-      if (!token || !patientId || !hcpId) {
-        throw new Error('Missing token, patientId, or hcpId');
-      }
-
-      const headers = new HttpHeaders({
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      });
-
-      const response = await this.http.post(
-        `${BASE_URL}HealthCareProvider/EndEncounter/${patientId}/${hcpId}`,
-        this.encounterSession,
-        { headers }
-      ).toPromise();
-
-      // Clear all encounter-related data
-      this.clearEncounterSession();
-      
-      return { success: true, data: response };
-    } catch (error: any) {
-      console.error('Error ending encounter:', error);
-      return { success: false, error: error.message || 'Unknown error' };
-    }
-  }
-
-  // Clear all encounter session data
   clearEncounterSession() {
-    // Clear service state
     this.reset();
-    
-    // Clear sessionStorage
     sessionStorage.removeItem('overlayShown');
     this.resetSessionPatientData();
     this.clearCachedPatientData();
@@ -190,59 +145,30 @@ export class EncounterSessionService {
     }
     this.encounterSession.prescription.medicines.push(medicine);
   }
-  
+
   getPrescriptionMedicines(): any[] {
     return this.encounterSession.prescription?.medicines || [];
   }
 
-  resetSessionPatientData(){
+  resetSessionPatientData() {
     this.setPatientId('');
     this.setPatientName('');
     this.setPatientNationalId('');
   }
 
-  // get encounter session data
   getEncounterInfo() {
     return this.encounterSession.encounter || {};
   }
-  
+
   getCondition(): any {
     return this.encounterSession.condition || null;
   }
-  
+
   getObservations(): any[] {
     return this.encounterSession.observations || [];
   }
-  
+
   getLabTest(): any {
     return this.encounterSession.labTests || null;
   }
-
-  buildEncounterPayload(
-    encounterInfo: any,
-    prescriptions: any[],
-    condition: any,
-    observations: any[],
-    labTest: any
-  ): any {
-    return {
-      encounter: {
-        startDate: this.encounterSession.encounter.startDate,
-        endDate: new Date().toISOString(),
-        reason_To_Visit: encounterInfo.reasonToVisit || '',
-        treatment_Plan: encounterInfo.treatmentPlan || '',
-        note: encounterInfo.note || ''
-      },
-      ...(prescriptions.length > 0 && {
-        prescription: {
-          prescriptionDate: new Date().toISOString(),
-          medicines: prescriptions
-        }
-      }),
-      ...(condition && { condition }),
-      ...(observations.length > 0 && { observations }),
-      ...(labTest && { labTests: labTest })
-    };
-  }
-  
 }
