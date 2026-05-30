@@ -1,11 +1,11 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import ApexCharts, { ApexOptions } from 'apexcharts';
-import { BASE_URL } from '../../services/config';
 import { loadImage } from '../../services/loadPicture';
 import { SessionService } from '../../services/session.service';
+import { DashboardService } from '../../core/api/dashboard.service';
+import { ClinicDashboard } from '../../core/models/dashboard.models';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,56 +15,65 @@ import { SessionService } from '../../services/session.service';
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-  username = '';
-  email = '';
-  data: any;
+  dashboard?: ClinicDashboard;
+  loading = true;
+  error = '';
 
   @ViewChild('doctorImage') doctorImageRef!: ElementRef<HTMLImageElement>;
 
-  constructor(private http: HttpClient, private router: Router,private sessionService: SessionService) {}
+  constructor(
+    private router: Router,
+    private sessionService: SessionService,
+    private dashboardService: DashboardService
+  ) {}
 
   ngOnInit(): void {
-    const token = this.sessionService.getToken();
-    const Id = this.sessionService.getHealthcareProviderId();
+    const hcpId = this.sessionService.getHealthcareProviderId() ?? '';
 
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.get(`${BASE_URL}HealthCareProvider/ClinicDashboard?HealthCareProviderId=${Id}`, { headers }).subscribe({
-      next: (res: any) => {
-        console.log('Data received:', res);
-        this.data = res;
-
-        //this.sessionService.setUsername(res.name); moved to login
+    this.dashboardService.getClinicDashboard(hcpId).subscribe({
+      next: (res) => {
+        this.dashboard = res;
+        this.loading = false;
         this.sessionService.setSpecialization(res.specialization);
-        this.username = res.name;
-        //this.email = sessionStorage.getItem('hcpMail') || '';
 
-        this.loadTotalPatientsPerDay();
-        this.loadFrequentDiseases();
-
-        if (res.imageUrl && this.doctorImageRef) {
-          loadImage(res.imageUrl, this.doctorImageRef.nativeElement);
-        }
+        setTimeout(() => {
+          if (res.last7DaysEncounters?.length) {
+            this.loadTotalPatientsPerDay();
+          }
+          if (res.frequentConditions?.length) {
+            this.loadFrequentDiseases();
+          }
+          if (res.imageUrl && this.doctorImageRef) {
+            loadImage(res.imageUrl, this.doctorImageRef.nativeElement);
+          }
+        });
       },
-      error: err => console.error('Fetch error:', err)
+      error: () => {
+        this.error = 'Unable to load dashboard data. Please try again.';
+        this.loading = false;
+      }
     });
 
     this.generateCalendar();
+  }
+
+  get recentEncounters() {
+    return this.dashboard?.encounterSummaray ?? [];
   }
 
   // Charts
   loadTotalPatientsPerDay() {
     const options: ApexOptions = {
       chart: { type: 'bar', height: 250 },
-      series: [{ name: 'Encounters', data: this.data.last7DaysEncounters }],
+      series: [{ name: 'Encounters', data: this.dashboard!.last7DaysEncounters }],
       xaxis: { categories: this.generateDayLabels() },
       yaxis: { title: { text: 'Number of Encounters' }, forceNiceScale: true },
       dataLabels: { enabled: false },
       colors: ['#0D9488']
     };
 
-    const chart = new ApexCharts(document.querySelector('#TotalPatientsPerDayChart')!, options);
-    chart.render();
+    const el = document.querySelector('#TotalPatientsPerDayChart') as HTMLElement | null;
+    if (el) new ApexCharts(el, options).render();
   }
 
   generateDayLabels(): string[] {
@@ -81,56 +90,31 @@ export class DashboardComponent implements OnInit {
   }
 
   loadFrequentDiseases() {
-    const labels = this.data.frequentConditions.map((c: any) => c.conditionName);
-    const series = this.data.frequentConditions.map((c: any) => c.frequency);
-  
+    const labels = this.dashboard!.frequentConditions.map(c => c.conditionName);
+    const series = this.dashboard!.frequentConditions.map(c => c.frequency);
+
     const options: ApexOptions = {
-      chart: {
-        type: 'pie',
-        width: '100%',
-        height: 400,
-      },
+      chart: { type: 'pie', width: '100%', height: 400 },
       labels,
       series,
-      tooltip: {
-        y: {
-          formatter: (val: any) => `${val} cases`
-        }
-      },
+      tooltip: { y: { formatter: (val: any) => `${val} cases` } },
       responsive: [
         {
           breakpoint: 1024,
-          options: {
-            chart: {
-              width: '100%',
-              height: 300
-            },
-            legend: {
-              position: 'bottom'
-            }
-          }
+          options: { chart: { width: '100%', height: 300 }, legend: { position: 'bottom' } }
         },
         {
           breakpoint: 640,
-          options: {
-            chart: {
-              width: '100%',
-              height: 250
-            },
-            legend: {
-              position: 'bottom'
-            }
-          }
+          options: { chart: { width: '100%', height: 250 }, legend: { position: 'bottom' } }
         }
       ]
     };
-  
-    const chart = new ApexCharts(document.querySelector('#TopDiseasesChart')!, options);
-    chart.render();
-  }
-  
 
-  // 📅 Calendar Logic
+    const el = document.querySelector('#TopDiseasesChart') as HTMLElement | null;
+    if (el) new ApexCharts(el, options).render();
+  }
+
+  // Calendar Logic
   currentDate = new Date();
   currentMonth = this.currentDate.getMonth();
   currentYear = this.currentDate.getFullYear();
@@ -146,27 +130,23 @@ export class DashboardComponent implements OnInit {
     this.calendarDays = [];
 
     const firstDayOfMonth = new Date(this.currentYear, this.currentMonth, 1);
-    const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Start week on Saturday
+    const startingDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
     const daysInCurrentMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
     const daysInPrevMonth = new Date(this.currentYear, this.currentMonth, 0).getDate();
     const today = new Date();
 
-    // Previous month filler days
     for (let i = daysInPrevMonth - startingDayOfWeek + 1; i <= daysInPrevMonth; i++) {
       this.calendarDays.push({ date: i, isPrevOrNext: true, isToday: false });
     }
 
-    // Current month days
     for (let i = 1; i <= daysInCurrentMonth; i++) {
       const isToday =
         i === today.getDate() &&
         this.currentMonth === today.getMonth() &&
         this.currentYear === today.getFullYear();
-
       this.calendarDays.push({ date: i, isPrevOrNext: false, isToday });
     }
 
-    // Next month filler days to make 42 total (6 weeks view)
     const remaining = 42 - this.calendarDays.length;
     for (let i = 1; i <= remaining; i++) {
       this.calendarDays.push({ date: i, isPrevOrNext: true, isToday: false });
@@ -193,7 +173,7 @@ export class DashboardComponent implements OnInit {
     this.generateCalendar();
   }
 
-  goToEncounterSummary(encounterId: number): void {
-  this.router.navigate(['/encounter-details', encounterId]);
+  goToPatientHistory(patientId: string): void {
+    this.router.navigate(['/patient-history', patientId]);
   }
 }

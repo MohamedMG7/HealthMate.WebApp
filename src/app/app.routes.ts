@@ -10,7 +10,7 @@ import { ReportsComponent } from './pages/reports/reports.component';
 import { HealthRecordComponent } from './pages/health-record/health-record.component';
 import { LabtestDetailsComponent } from './pages/labtest-details/labtest-details.component';
 import { MedicalImageDetailsComponent } from './pages/medical-image-details/medical-image-details.component';
-import { AuthGuard } from './services/auth.guard';
+import { authGuard } from './services/auth.guard';
 import { PrescriptionDetailsComponent } from './pages/prescription-details/prescription-details.component';
 import { ConditionAddComponent } from './pages/condition-add/condition-add.component';
 import { PrescriptionAddComponent } from './pages/prescription-add/prescription-add.component';
@@ -41,7 +41,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
-    canActivate:[AuthGuard],
+    canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'encounter', component: EncounterComponent },
@@ -62,7 +62,13 @@ export const routes: Routes = [
       { path: 'message-details/:id', component: MessageDetailsComponent},
       { path: 'encounter-details/:id', component: EncounterDetailsComponent},
       { path: 'encounter-confirmation', component: EncounterConfirmationComponent },
-
+      {
+        path: 'patient-history/:patientId',
+        loadComponent: () =>
+          import('./pages/patient-history/patient-history.component').then(
+            (m) => m.PatientHistoryComponent
+          )
+      },
     ]
   },
 

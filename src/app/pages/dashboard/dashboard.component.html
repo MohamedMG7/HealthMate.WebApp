@@ -8,15 +8,32 @@
       </span>
       <input type="text" placeholder="Search"
         class="pl-10 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
-      </div>
-
-      <select class="text-sm text-teal-600 rounded-md px-2 py-1 bg-transparent focus:outline-none focus:ring-2 focus:ring-teal-500">
-        <option value="en-us">English (US)</option>
-        <option value="ar">Arabic (AR)</option>
-        <option value="fr">French (FR)</option>
-      </select>
     </div>
 
+    <select class="text-sm text-teal-600 rounded-md px-2 py-1 bg-transparent focus:outline-none focus:ring-2 focus:ring-teal-500">
+      <option value="en-us">English (US)</option>
+      <option value="ar">Arabic (AR)</option>
+      <option value="fr">French (FR)</option>
+    </select>
+  </div>
+
+  <!-- Loading state -->
+  @if (loading) {
+    <div class="flex items-center justify-center h-64">
+      <div class="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  }
+
+  <!-- Error banner -->
+  @if (!loading && error) {
+    <div class="mb-4 flex items-center gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>{{ error }}</span>
+    </div>
+  }
+
+  <!-- Main content (only when loaded successfully) -->
+  @if (!loading && !error && dashboard) {
     <!-- Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
 
@@ -24,53 +41,63 @@
       <div class="lg:col-span-2 space-y-6">
         <h2 class="text-xl font-semibold">
           Welcome,<br />
-          <span class="font-bold text-2xl">Dr. {{ username }}</span>
+          <span class="font-bold text-2xl">Dr. {{ dashboard.name }}</span>
         </h2>
 
         <!-- Charts -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="border rounded-lg p-4 bg-white">
             <h2 class="py-2 font-bold text-lg">Total patients per day</h2>
-            <div id="TotalPatientsPerDayChart" class="flex items-center justify-center"></div>
+            @if (dashboard.last7DaysEncounters.length) {
+              <div id="TotalPatientsPerDayChart" class="flex items-center justify-center"></div>
+            } @else {
+              <p class="py-8 text-center text-sm text-gray-400">No encounter data for the last 7 days.</p>
+            }
           </div>
           <div class="border rounded-lg p-3 bg-white">
             <h2 class="py-2 font-bold text-lg">Top Diseases</h2>
-            <div id="TopDiseasesChart" class="w-full h-full min-h-[250px] flex items-center justify-center"></div>
+            @if (dashboard.frequentConditions.length) {
+              <div id="TopDiseasesChart" class="w-full h-full min-h-[250px] flex items-center justify-center"></div>
+            } @else {
+              <p class="py-8 text-center text-sm text-gray-400">No condition data available.</p>
+            }
           </div>
-
         </div>
 
         <!-- Table -->
         <div class="border border-teal-700 p-3 rounded-lg bg-white">
           <h3 class="py-2 font-bold text-lg">Recent patients</h3>
 
-          <!-- Scrollable container with shorter height -->
-          <div class="overflow-y-auto max-h-[200px] scrollbar-hidden rounded-md">
-            <table class="w-full text-sm">
-              <thead class="sticky top-0 z-10 bg-teal-700 text-white">
-                <tr>
-                  <th class="py-3 px-4 text-left">Date</th>
-                  <th class="py-3 px-4 text-left">Name</th>
-                  <th class="py-3 px-4 text-left pl-[60px]">ID</th>
-                  <th class="py-3 px-4 text-left">Diagnosis</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (patient of data?.encounterSummaray; track patient; let i = $index) {
-                  <tr
-                    [ngClass]="i % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
-                    class="border-b border-teal-200 cursor-pointer hover:bg-gray-100 transition duration-200"
-                    (click)="goToEncounterSummary(patient.encounterId)"
-                    >
-                    <td class="py-2 px-4">{{ patient.encounterDate }}</td>
-                    <td class="py-2 px-4">{{ patient.patient_Name }}</td>
-                    <td class="py-2 px-4 pl-[60px]">{{ patient.patient_Id }}</td>
-                    <td class="py-2 px-4">{{ patient.diagnosis || 'N/A' }}</td>
+          @if (recentEncounters.length) {
+            <div class="overflow-y-auto max-h-[200px] scrollbar-hidden rounded-md">
+              <table class="w-full text-sm">
+                <thead class="sticky top-0 z-10 bg-teal-700 text-white">
+                  <tr>
+                    <th class="py-3 px-4 text-left">Date</th>
+                    <th class="py-3 px-4 text-left">Name</th>
+                    <th class="py-3 px-4 text-left pl-[60px]">ID</th>
+                    <th class="py-3 px-4 text-left">Diagnosis</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  @for (patient of recentEncounters; track patient.encounterId; let i = $index) {
+                    <tr
+                      [ngClass]="i % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
+                      class="border-b border-teal-200 cursor-pointer hover:bg-gray-100 transition duration-200"
+                      (click)="goToPatientHistory(patient.patient_Id)"
+                    >
+                      <td class="py-2 px-4">{{ patient.encounterDate }}</td>
+                      <td class="py-2 px-4">{{ patient.patient_Name }}</td>
+                      <td class="py-2 px-4 pl-[60px]">{{ patient.patient_Id }}</td>
+                      <td class="py-2 px-4">{{ patient.diagnosis || 'N/A' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="py-6 text-center text-sm text-gray-400">No recent patients to display.</p>
+          }
         </div>
 
       </div>
@@ -78,81 +105,81 @@
       <!-- Right Column -->
       <div class="space-y-6 bg-white border border-2 rounded-lg border-teal-700 p-[19px]">
         <div class="text-center bg-white">
-          <!-- ✅ Profile Image Reference -->
           <img #doctorImage src="assets/images/doctor.png" alt="Doctor"
             class="w-24 h-24 rounded-full mx-auto mb-2" />
-            <h3 class="text-lg font-bold">{{ data?.name }}</h3>
-            <p class="text-sm text-gray-500">{{ data?.specialization }}</p>
+          <h3 class="text-lg font-bold">{{ dashboard.name }}</h3>
+          <p class="text-sm text-gray-500">{{ dashboard.specialization }}</p>
 
-            <div class="flex justify-between mt-4 text-sm flex-wrap mb-5">
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#e5fafd]">
-                  <img src="assets/icons/healthicons_inpatient-outline.png" />
-                </div>
-                <div class="flex flex-col">
-                  <p class="text-gray-400">Total patients</p>
-                  <p class="font-semibold text-teal-700">{{ data?.totalPatients }}</p>
-                </div>
+          <div class="flex justify-between mt-4 text-sm flex-wrap mb-5">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#e5fafd]">
+                <img src="assets/icons/healthicons_inpatient-outline.png" />
               </div>
-
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#e5fafd]">
-                  <img src="assets/icons/message-blue.png" class="w-5 h-5" />
-                </div>
-                <div class="flex flex-col">
-                  <p class="text-gray-400">Messages</p>
-                  <p class="font-semibold">{{ data?.totalOfUnreadMessages }}</p>
-                </div>
+              <div class="flex flex-col">
+                <p class="text-gray-400">Total patients</p>
+                <p class="font-semibold text-teal-700">{{ dashboard.totalPatients }}</p>
               </div>
+            </div>
 
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#e5fafd]">
-                  <img src="assets/icons/hugeicons_appointment-02.png" class="w-5 h-5" />
-                </div>
-                <div class="flex flex-col">
-                  <p class="text-gray-400">Today's patients</p>
-                  <p class="font-semibold text-teal-700">{{ data?.totalEncountersToday }}</p>
-                </div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#e5fafd]">
+                <img src="assets/icons/message-blue.png" class="w-5 h-5" />
+              </div>
+              <div class="flex flex-col">
+                <p class="text-gray-400">Messages</p>
+                <p class="font-semibold">{{ dashboard.totalOfUnreadMessages }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center bg-[#e5fafd]">
+                <img src="assets/icons/hugeicons_appointment-02.png" class="w-5 h-5" />
+              </div>
+              <div class="flex flex-col">
+                <p class="text-gray-400">Today's patients</p>
+                <p class="font-semibold text-teal-700">{{ dashboard.totalEncountersToday }}</p>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Calendar -->
-          <div class="p-3 bg-white rounded-lg w-full h-[20rem] border border-teal-700">
-            <div class="flex justify-between items-center mb-4">
-              <button (click)="previousMonth()" class="text-teal-600 text-xl">&larr;</button>
-              <h2 class="text-lg font-bold text-gray-800 select-none cursor-default">{{ monthNames[currentMonth] }} {{ currentYear }}</h2>
-              <button (click)="nextMonth()" class="text-teal-600 text-xl">&rarr;</button>
-            </div>
+        <!-- Calendar -->
+        <div class="p-3 bg-white rounded-lg w-full h-[20rem] border border-teal-700">
+          <div class="flex justify-between items-center mb-4">
+            <button (click)="previousMonth()" class="text-teal-600 text-xl">&larr;</button>
+            <h2 class="text-lg font-bold text-gray-800 select-none cursor-default">{{ monthNames[currentMonth] }} {{ currentYear }}</h2>
+            <button (click)="nextMonth()" class="text-teal-600 text-xl">&rarr;</button>
+          </div>
 
-            <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-600 mb-2">
-              @for (day of weekDays; track day) {
-                <div class="select-none cursor-default">{{ day }}</div>
-              }
-            </div>
+          <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-600 mb-2">
+            @for (day of weekDays; track day) {
+              <div class="select-none cursor-default">{{ day }}</div>
+            }
+          </div>
 
-            <div class="grid grid-cols-7 text-center text-gray-800 text-sm gap-y-5">
-              @for (day of calendarDays; track day) {
-                <div
-                  class="select-none cursor-default"
-              [ngClass]="{
-                'text-gray-300': day.isPrevOrNext,
-                'relative': day.isToday
-              }"
-                  >
-                  @if (day.isToday) {
-                    <div
-                      class="w-7 h-7 mx-auto rounded-full border-2 border-teal-600 text-teal-600 flex items-center justify-center">
-                      {{ day.date }}
-                    </div>
-                  }
-                  @if (!day.isToday) {
-                    <span>{{ day.date }}</span>
-                  }
-                </div>
-              }
-            </div>
+          <div class="grid grid-cols-7 text-center text-gray-800 text-sm gap-y-5">
+            @for (day of calendarDays; track day) {
+              <div
+                class="select-none cursor-default"
+                [ngClass]="{
+                  'text-gray-300': day.isPrevOrNext,
+                  'relative': day.isToday
+                }"
+              >
+                @if (day.isToday) {
+                  <div
+                    class="w-7 h-7 mx-auto rounded-full border-2 border-teal-600 text-teal-600 flex items-center justify-center">
+                    {{ day.date }}
+                  </div>
+                }
+                @if (!day.isToday) {
+                  <span>{{ day.date }}</span>
+                }
+              </div>
+            }
           </div>
         </div>
       </div>
     </div>
+  }
+</div>
