@@ -7,6 +7,8 @@ import { EncounterSessionService } from '../../services/encounter-session.servic
 import { PopupMessageService } from '../../services/popup-message.service';
 import { SessionService } from '../../services/session.service';
 import { BASE_URL } from '../../services/config';
+import { EncounterLifecycleService } from '../../core/api/encounter-lifecycle.service';
+import { FinalizeEncounterInput } from '../../core/models/encounter-lifecycle.models';
 
 @Component({
   selector: 'app-encounter-confirmation',
@@ -24,15 +26,17 @@ export class EncounterConfirmationComponent implements OnInit {
 
   medicines: any[] = [];
   medicineMap: { [id: number]: string } = {};
-
   diseaseMap: { [id: number]: string } = {};
+
+  submitting = false;
 
   constructor(
     public router: Router,
     private http: HttpClient,
     private encounterService: EncounterSessionService,
     private popupService: PopupMessageService,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    private encounterLifecycleService: EncounterLifecycleService
   ) {}
 
   ngOnInit(): void {
@@ -74,7 +78,6 @@ export class EncounterConfirmationComponent implements OnInit {
           return map;
         }, {} as { [id: number]: string });
 
-        // Patch condition name for display
         if (this.condition && this.condition.diseasesId) {
           this.condition.diseaseName = this.diseaseMap[this.condition.diseasesId] || 'Unknown';
         }
@@ -87,19 +90,59 @@ export class EncounterConfirmationComponent implements OnInit {
   }
 
   submitEncounter(): void {
-    // Save final user edits (reasonToVisit, note, treatmentPlan)
-    this.encounterService.setEncounterInfo(this.encounterInfo);
+    if (this.submitting) return;
+    this.submitting = true;
 
-    this.encounterService.endEncounter().then(result => {
-      if (result.success) {
-        this.popupService.showSuccess('Encounter submitted successfully!');
-        this.router.navigate(['/encounter']);
-      } else {
-        this.popupService.showFailure('Failed to submit encounter.');
+    const patientId = Number(this.encounterService.getPatientId());
+    const hcpId = Number(this.sessionService.getHealthcareProviderId());
+    const condition = this.encounterService.getCondition();
+    const meds = this.encounterService.getPrescriptionMedicines();
+
+    const input: FinalizeEncounterInput = {
+      start: {
+        patientId,
+        healthCareProviderId: hcpId,
+        reasonToVisit: this.encounterInfo.reasonToVisit || ''
+      },
+      end: {
+        treatmentPlan: this.encounterInfo.treatmentPlan || '',
+        note: this.encounterInfo.note || undefined
       }
-    }).catch(err => {
-      console.error('Error submitting encounter:', err);
-      this.popupService.showFailure('An error occurred while submitting encounter.');
+    };
+
+    if (condition) {
+      input.condition = {
+        diseaseId: condition.diseasesId,
+        severity: condition.severity,
+        clinicalStatus: condition.clinicalStatus,
+        dateRecorded: new Date().toISOString(),
+        note: condition.note || undefined
+      };
+    }
+
+    if (meds.length > 0) {
+      input.prescription = {
+        publisher: this.sessionService.getUsername() ?? null,
+        medicines: meds.map((m: any) => ({
+          medicineId: m.medicineId,
+          dosage: m.dosage,
+          frequencyInHours: m.frequencyInHours,
+          durationInDays: m.durationInDays
+        }))
+      };
+    }
+
+    this.encounterLifecycleService.finalize(input).subscribe({
+      next: () => {
+        this.popupService.showSuccess('Encounter submitted successfully!');
+        this.encounterService.clearEncounterSession();
+        this.router.navigate(['/encounter']);
+      },
+      error: (err) => {
+        console.error('Error submitting encounter:', err);
+        this.popupService.showFailure('Failed to submit encounter. Please try again.');
+        this.submitting = false;
+      }
     });
   }
 }
