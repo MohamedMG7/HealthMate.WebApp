@@ -1,23 +1,30 @@
-<div class="max-h-[400px] overflow-y-auto rounded border border-teal-700 scrollbar-hidden">
-  <table class="w-full table-auto">
-    <thead class="bg-teal-800 text-white sticky top-0">
-      <tr>
-        <th class="p-2">Test name</th>
-        <th class="p-2">Date</th>
-        <th class="p-2">Result</th>
-        <th class="p-2">Note</th>
-      </tr>
-    </thead>
-    <tbody class="text-sm text-gray-700 text-center">
-      @for (test of labTests; track test) {
-        <tr class="border-b rounded-3xl border-teal-700 cursor-pointer"
-          (click)="onLabTestClick(test.labTestId)">
-          <td class="py-4">{{ test.testName }}</td>
-          <td class="p-2">{{ test.testDate | date: 'dd/MM/yyyy' }}</td>
-          <td class="p-2">{{ test.result }}</td>
-          <td class="p-2">{{ test.note }}</td>
+@if (labTests.length === 0) {
+  <div class="flex flex-col items-center justify-center h-32 text-gray-400">
+    <i class="fas fa-folder-open text-3xl mb-2"></i>
+    <p class="text-sm">No lab tests recorded for this patient.</p>
+  </div>
+} @else {
+  <div class="max-h-[400px] overflow-y-auto rounded border border-teal-700 scrollbar-hidden">
+    <table class="w-full table-auto">
+      <thead class="bg-teal-800 text-white sticky top-0">
+        <tr>
+          <th class="p-2">Test name</th>
+          <th class="p-2">Date</th>
+          <th class="p-2">Result</th>
+          <th class="p-2">Note</th>
         </tr>
-      }
-    </tbody>
-  </table>
-</div>
+      </thead>
+      <tbody class="text-sm text-gray-700 text-center">
+        @for (test of labTests; track test) {
+          <tr class="border-b rounded-3xl border-teal-700 cursor-pointer"
+            (click)="onLabTestClick(test.labTestId)">
+            <td class="py-4">{{ test.testName }}</td>
+            <td class="p-2">{{ test.testDate | date: 'dd/MM/yyyy' }}</td>
+            <td class="p-2">{{ test.result }}</td>
+            <td class="p-2">{{ test.note }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
