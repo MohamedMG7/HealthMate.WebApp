@@ -62,7 +62,13 @@ export const routes: Routes = [
       { path: 'message-details/:id', component: MessageDetailsComponent},
       { path: 'encounter-details/:id', component: EncounterDetailsComponent},
       { path: 'encounter-confirmation', component: EncounterConfirmationComponent },
-
+      {
+        path: 'patient-history/:patientId',
+        loadComponent: () =>
+          import('./pages/patient-history/patient-history.component').then(
+            (m) => m.PatientHistoryComponent
+          )
+      },
     ]
   },
 
