@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { SessionService } from '../../services/session.service';
+import { MessageService } from '../../core/api/message.service';
+import { MessageSummary } from '../../core/models/message.models';
 
 @Component({
   selector: 'app-messages',
@@ -12,22 +12,20 @@ import { SessionService } from '../../services/session.service';
   styleUrls: ['./messages.component.css']
 })
 export class MessagesComponent implements OnInit {
-  messages: any[] = [];
+  messages: MessageSummary[] = [];
   loading = true;
+  error = false;
 
-  constructor(private http: HttpClient, private router: Router, private sessionService: SessionService) {}
+  constructor(private messageService: MessageService, private router: Router) {}
 
   ngOnInit(): void {
-    const token = this.sessionService.getToken() || '';
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.get('https://healthmate.runasp.net/api/Message/inbox', { headers }).subscribe({
-      next: (res: any) => {
+    this.messageService.getInbox().subscribe({
+      next: (res) => {
         this.messages = res;
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Failed to load inbox', err);
+      error: () => {
+        this.error = true;
         this.loading = false;
       }
     });
@@ -35,27 +33,20 @@ export class MessagesComponent implements OnInit {
 
   viewMessage(id: number) {
     const message = this.messages.find(m => m.id === id);
-    const token = this.sessionService.getToken() || '';
-    const headers = { Authorization: `Bearer ${token}` };
-  
-    // If message is unread, mark it as read first
+
     if (message && !message.isRead) {
-      this.http.post(`https://healthmate.runasp.net/api/Message/${id}/read`, {}, { headers }).subscribe({
+      this.messageService.markRead(id).subscribe({
         next: () => {
-          // Optionally update UI locally
           message.isRead = true;
           this.router.navigate(['/message-details', id]);
         },
-        error: (err) => {
-          console.error(`Failed to mark message ${id} as read`, err);
+        error: () => {
           // Still navigate even if marking fails
           this.router.navigate(['/message-details', id]);
         }
       });
     } else {
-      // Already read, just navigate
       this.router.navigate(['/message-details', id]);
     }
   }
-  
 }
