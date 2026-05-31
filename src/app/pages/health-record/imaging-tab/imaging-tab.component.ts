@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { MedicalImageSummary } from '../../../core/models/health-record.models';
 
 @Component({
   selector: 'app-imaging-tab',
@@ -10,16 +11,15 @@ import { Router } from '@angular/router';
   styleUrls: ['./imaging-tab.component.css']
 })
 export class ImagingTabComponent {
-  @Input() images: any[] = [];
+  @Input() images: MedicalImageSummary[] = [];
 
   constructor(private router: Router) {}
 
-  onImageClick(imageId: string): void {
-    sessionStorage.setItem('selectedMedicalImageId', imageId);
-    this.router.navigate(['/medical-image-details', imageId]); 
+  onImageClick(imageId: number): void {
+    this.router.navigate(['/medical-image-details', imageId]);
   }
 
   addImage(): void {
-    this.router.navigate(['/imaging-add']); // 🔁 adjust based on your route
+    this.router.navigate(['/imaging-add']);
   }
 }

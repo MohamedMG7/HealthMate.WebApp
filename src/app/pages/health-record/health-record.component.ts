@@ -1,17 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BASE_URL } from '../../services/config';
 
-// Tab components
 import { LabTabComponent } from './lab-tab/lab-tab.component';
 import { ImagingTabComponent } from './imaging-tab/imaging-tab.component';
 import { MedicineTabComponent } from './medicine-tab/medicine-tab.component';
 import { ConditionTabComponent } from './condition-tab/condition-tab.component';
 import { PrescriptionTabComponent } from './prescription-tab/prescription-tab.component';
-import { SessionService } from '../../services/session.service';
 import { EncounterSessionService } from '../../services/encounter-session.service';
+import { HealthRecordService } from '../../core/api/health-record.service';
+import { HealthRecordSummary } from '../../core/models/health-record.models';
 
 @Component({
   selector: 'app-health-record',
@@ -30,9 +28,11 @@ import { EncounterSessionService } from '../../services/encounter-session.servic
 export class HealthRecordComponent implements OnInit {
   patientId = '';
   patientName = '';
-  patientNationalId : string = ''
-  token: string = '';
-  data: any = null;
+  patientNationalId = '';
+
+  summary: HealthRecordSummary | null = null;
+  loading = false;
+  error: string | null = null;
 
   tabs = [
     { id: 'lab', label: 'Lab tests' },
@@ -44,46 +44,54 @@ export class HealthRecordComponent implements OnInit {
 
   activeTab = 'lab';
 
-  constructor(private router: Router, private http: HttpClient, private sessionService: SessionService, private encounterSessionService: EncounterSessionService) {}
+  constructor(
+    private router: Router,
+    private encounterSessionService: EncounterSessionService,
+    private healthRecordService: HealthRecordService
+  ) {}
 
   ngOnInit(): void {
-    // Get info from session
     this.patientNationalId = this.encounterSessionService.getPatientNationalId() || '';
     this.patientName = this.encounterSessionService.getPatientName() || '';
     this.patientId = this.encounterSessionService.getPatientId() || '';
-    this.token = this.sessionService.getToken() || '';
-  
-    if (!this.token || !this.patientId) {
-      console.error('Missing token or patientId in session storage.');
+
+    if (!this.patientId) {
+      this.error = 'No patient selected. Please start an encounter first.';
       return;
     }
-  
-    // Check if data is cached
-    const cachedData = this.encounterSessionService.getCachedHealthRecordSummary();
-    if (cachedData) {
-      this.data = cachedData;
-      //console.log('📦 Loaded health record data from cache.');
+
+    const cached = this.encounterSessionService.getCachedHealthRecordSummary() as HealthRecordSummary | null;
+    if (cached) {
+      this.summary = cached;
       return;
     }
-  
-    // If not cached, fetch from API
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${this.token}`
-    });
-  
-    const url = `${BASE_URL}HealthRecord/Summary/${this.patientId}`;
-    console.log('🌐 Requesting Health Record:', url);
-  
-    this.http.get(url, { headers }).subscribe({
-      next: (response: any) => {
-        console.log('✅ Health record data received:', response);
-        this.data = response;
-        this.encounterSessionService.setCachedHealthRecordSummary(response); // ✅ Cache it
+
+    this.loading = true;
+    this.healthRecordService.getSummary(Number(this.patientId)).subscribe({
+      next: (response) => {
+        this.summary = response;
+        this.encounterSessionService.setCachedHealthRecordSummary(response);
+        this.loading = false;
       },
-      error: (err) => {
-        console.error('❌ Failed to fetch health record:', err);
+      error: () => {
+        this.error = 'Failed to load health record. Please try again.';
+        this.loading = false;
+      }
+    });
+  }
+
+  retry(): void {
+    this.error = null;
+    this.loading = true;
+    this.healthRecordService.getSummary(Number(this.patientId)).subscribe({
+      next: (response) => {
+        this.summary = response;
+        this.encounterSessionService.setCachedHealthRecordSummary(response);
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to load health record. Please try again.';
+        this.loading = false;
       }
     });
   }
@@ -96,4 +104,3 @@ export class HealthRecordComponent implements OnInit {
     this.router.navigate(['/encounter']);
   }
 }
- 

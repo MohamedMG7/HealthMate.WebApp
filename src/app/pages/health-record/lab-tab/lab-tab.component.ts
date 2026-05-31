@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { LabTestSummary } from '../../../core/models/health-record.models';
 
 @Component({
   selector: 'app-lab-tab',
@@ -10,12 +11,11 @@ import { Router } from '@angular/router';
   styleUrls: ['./lab-tab.component.css']
 })
 export class LabTabComponent {
-  @Input() labTests: any[] = [];
+  @Input() labTests: LabTestSummary[] = [];
 
   constructor(private router: Router) {}
 
-  // ✅ Navigate using Angular route param (NO sessionStorage)
-  onLabTestClick(labTestId: string): void {
+  onLabTestClick(labTestId: number): void {
     this.router.navigate(['/labtest-details', labTestId]);
   }
 
