@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { BASE_URL } from '../../services/config';
 import { SessionService } from '../../services/session.service';
+import { AccountService } from '../../core/api/account.service';
+import { PopupMessageService } from '../../services/popup-message.service';
 
 @Component({
   selector: 'app-settings',
@@ -21,58 +20,49 @@ export class SettingsComponent implements OnInit {
   email: string = '';
   specialization: string = '';
 
-  constructor(private http: HttpClient, private sessionService: SessionService) {}
+  constructor(
+    private sessionService: SessionService,
+    private accountService: AccountService,
+    private popupMessage: PopupMessageService
+  ) {}
 
   ngOnInit(): void {
-    // Fill in from session service
     this.name = this.sessionService.getUsername() ?? '';
     this.email = this.sessionService.gethcpMail() ?? '';
     this.specialization = this.sessionService.getSpecialization() ?? '';
-
   }
 
-  resetPassword() {
-    const token = this.sessionService.getToken();
+  resetPassword(): void {
     const applicationUserId = this.sessionService.getApplicationUserId();
 
     if (!applicationUserId) {
-      alert("User ID not found.");
+      this.popupMessage.showFailure('User ID not found.');
       return;
     }
 
     if (!this.oldPassword || !this.newPassword || !this.confirmPassword) {
-      alert("Please fill in all fields.");
+      this.popupMessage.showFailure('Please fill in all fields.');
       return;
     }
 
     if (this.newPassword !== this.confirmPassword) {
-      alert("New password and confirmation do not match.");
+      this.popupMessage.showFailure('New password and confirmation do not match.');
       return;
     }
 
-    const payload = {
+    this.accountService.resetPassword({
       ApplicationUserId: applicationUserId,
       currentPassword: this.oldPassword,
       newPassword: this.newPassword
-    };
-    
-    const headers = {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    };
-
-    this.http.post(`${BASE_URL}Account/resetpassword`, payload, headers).subscribe({
+    }).subscribe({
       next: () => {
-        alert("Password reset successful!");
+        this.popupMessage.showSuccess('Password reset successful!');
         this.oldPassword = '';
         this.newPassword = '';
         this.confirmPassword = '';
       },
-      error: (err) => {
-        console.error(err);
-        alert("Failed to reset password. Please check your credentials.");
+      error: () => {
+        this.popupMessage.showFailure('Failed to reset password. Please check your current password and try again.');
       }
     });
   }

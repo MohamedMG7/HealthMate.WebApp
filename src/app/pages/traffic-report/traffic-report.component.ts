@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-
-import { HttpClient } from '@angular/common/http';
-import { BASE_URL } from '../../services/config';
 import { SessionService } from '../../services/session.service';
+import { ReporterService } from '../../core/api/reporter.service';
+import { TrafficReport } from '../../core/models/report.models';
 
 @Component({
   selector: 'app-traffic-report',
@@ -12,27 +11,36 @@ import { SessionService } from '../../services/session.service';
   styleUrls: ['./traffic-report.component.css']
 })
 export class TrafficReportComponent implements OnInit {
-  report: any = null;
+  report: TrafficReport | null = null;
+  loading = false;
+  error = '';
 
-  constructor(private http: HttpClient, private sessionService: SessionService) {}
+  constructor(
+    private sessionService: SessionService,
+    private reporterService: ReporterService
+  ) {}
 
   ngOnInit(): void {
-    //const providerId = sessionStorage.getItem("hcpId");
     const providerId = this.sessionService.getHealthcareProviderId();
-    const token = this.sessionService.getToken(); // or wherever you're storing it
-
-  
-    const headers = {
-      'Authorization': `Bearer ${token}`
-    };
-  
-    this.http.get(`${BASE_URL}Reporter/Traffic-Report?healthcareProviderId=${providerId}`, { headers })
-      .subscribe(data => {
+    if (!providerId) {
+      this.error = 'Provider ID not found. Please log in again.';
+      return;
+    }
+    this.loading = true;
+    this.error = '';
+    this.reporterService.getTrafficReport(providerId).subscribe({
+      next: (data) => {
         this.report = data;
-      });
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to load traffic report. Please try again.';
+        this.loading = false;
+      }
+    });
   }
 
-  getEntries(obj: any): [string, any][] {
+  getEntries(obj: Record<string, unknown>): [string, unknown][] {
     return Object.entries(obj);
   }
 }
