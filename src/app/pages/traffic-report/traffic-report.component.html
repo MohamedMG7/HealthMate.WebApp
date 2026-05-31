@@ -2,7 +2,30 @@
   <div class="h-full w-full border border-teal-700 rounded-xl font-bold p-6 overflow-y-auto">
     <h1 class="text-2xl text-teal-700 font-extrabold mb-6 text-center select-none cursor-default">📊 Traffic Report</h1>
 
-    @if (report) {
+    <!-- Loading state -->
+    @if (loading) {
+      <div class="flex items-center justify-center h-48">
+        <div class="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }
+
+    <!-- Error state -->
+    @if (!loading && error) {
+      <div class="flex items-center gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700 mb-4">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>{{ error }}</span>
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (!loading && !error && !report) {
+      <div class="text-gray-500 mt-10 text-center select-none cursor-default">
+        No report data available.
+      </div>
+    }
+
+    <!-- Report data -->
+    @if (!loading && !error && report) {
       <div class="space-y-6">
         <!-- Patient Overview -->
         <div>
@@ -57,12 +80,6 @@
             }
           </ul>
         </div>
-      </div>
-    }
-
-    @if (!report) {
-      <div class="text-gray-500 mt-10 text-center select-none cursor-default">
-        Loading report...
       </div>
     }
   </div>
