@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { SessionService } from '../../services/session.service';
+import { MessageService } from '../../core/api/message.service';
+import { MessageDetail } from '../../core/models/message.models';
 
 @Component({
   selector: 'app-message-details',
@@ -11,31 +11,25 @@ import { SessionService } from '../../services/session.service';
   templateUrl: './message-details.component.html'
 })
 export class MessageDetailsComponent implements OnInit {
-  message: any = null;
+  message: MessageDetail | null = null;
   loading = true;
   error = false;
 
   constructor(
     private route: ActivatedRoute,
-    private http: HttpClient,
-    private router: Router,
-    private sessionService: SessionService
+    private messageService: MessageService
   ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    const token = this.sessionService.getToken() ?? '';
 
-    if (!id || !token) {
+    if (!id) {
       this.error = true;
       this.loading = false;
       return;
     }
 
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    const url = `https://healthmate.runasp.net/api/Message/${id}`;
-
-    this.http.get(url, { headers }).subscribe({
+    this.messageService.getMessage(id).subscribe({
       next: (data) => {
         this.message = data;
         this.loading = false;

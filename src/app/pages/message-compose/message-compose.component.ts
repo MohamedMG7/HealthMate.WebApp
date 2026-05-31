@@ -1,16 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-
 import { Router, RouterModule } from '@angular/router';
-import { SessionService } from '../../services/session.service';
 import { PopupMessageService } from '../../services/popup-message.service';
-
-interface Receiver {
-  id: string;
-  name: string;
-  nationlId: string;
-}
+import { MessageService } from '../../core/api/message.service';
+import { Receiver } from '../../core/models/message.models';
 
 @Component({
   selector: 'app-message-compose',
@@ -25,19 +18,23 @@ export class MessageComposeComponent implements OnInit {
   selectedReceiverId: string = '';
   subject = '';
   body = '';
-  token = ''; // Set this from your session service or storage
 
-  constructor(private http: HttpClient, private router: Router, private sessionService: SessionService, private popupMessage: PopupMessageService) {}
+  constructor(
+    private messageService: MessageService,
+    private router: Router,
+    private popupMessage: PopupMessageService
+  ) {}
 
   ngOnInit(): void {
-    this.token = this.sessionService.getToken() ?? '';
-
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.token}`);
-    this.http.get<Receiver[]>('https://healthmate.runasp.net/api/Message/available-receivers', { headers })
-      .subscribe(data => {
+    this.messageService.getReceivers().subscribe({
+      next: (data) => {
         this.receivers = data;
         this.filteredReceivers = data;
-      });
+      },
+      error: () => {
+        this.popupMessage.showFailure('Failed to load receivers. Please try again.');
+      }
+    });
   }
 
   filterReceivers() {
@@ -49,27 +46,24 @@ export class MessageComposeComponent implements OnInit {
 
   sendMessage() {
     if (!this.selectedReceiverId || !this.subject || !this.body) {
-      alert('Please fill all fields.');
+      this.popupMessage.showFailure('Please fill all fields.');
       return;
     }
 
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.token}`);
     const payload = {
       receiverId: this.selectedReceiverId,
       subject: this.subject,
       body: this.body
     };
 
-    this.http.post('https://healthmate.runasp.net/api/Message', payload, { headers })
-      .subscribe({
-        next: () => {
-          this.popupMessage.showSuccess("Message sent successfully");
-          this.router.navigate(['/messages']);
-        },
-        error: err => {
-          console.error(err);
-          alert('Failed to send message');
-        }
-      });
+    this.messageService.send(payload).subscribe({
+      next: () => {
+        this.popupMessage.showSuccess('Message sent successfully');
+        this.router.navigate(['/messages']);
+      },
+      error: () => {
+        this.popupMessage.showFailure('Failed to send message');
+      }
+    });
   }
 }

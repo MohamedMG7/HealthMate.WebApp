@@ -10,10 +10,18 @@
   </div>
 
   @if (loading) {
-    <div class="text-gray-600">Loading messages...</div>
+    <div class="flex items-center justify-center h-48">
+      <div class="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
   }
 
-  @if (!loading && messages.length > 0) {
+  @if (!loading && error) {
+    <div class="flex items-center gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700 mb-4">
+      <span>Failed to load inbox. Please try again later.</span>
+    </div>
+  }
+
+  @if (!loading && !error && messages.length > 0) {
     <table class="w-full text-left border">
       <thead>
         <tr>
@@ -51,9 +59,9 @@
     </table>
   }
 
-  @if (!loading && messages.length === 0) {
-    <div class="text-gray-500">
-      No messages found.
+  @if (!loading && !error && messages.length === 0) {
+    <div class="flex flex-col items-center justify-center h-48 text-gray-400">
+      <p class="text-base">No messages found.</p>
     </div>
   }
 </div>
