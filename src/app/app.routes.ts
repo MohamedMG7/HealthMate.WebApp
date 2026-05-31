@@ -67,6 +67,13 @@ export const routes: Routes = [
             (m) => m.PatientHistoryComponent
           )
       },
+      {
+        path: 'early-detection',
+        loadComponent: () =>
+          import('./pages/early-detection/early-detection.component').then(
+            (m) => m.EarlyDetectionComponent
+          )
+      },
     ]
   },
 
