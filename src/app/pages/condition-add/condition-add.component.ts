@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { EncounterSessionService } from '../../services/encounter-session.service';
-import { BASE_URL } from '../../services/config';
 import { RouterModule } from '@angular/router';
 import { PopupMessageService } from '../../services/popup-message.service';
+import { ReferenceDataService } from '../../core/api/reference-data.service';
+import { Disease, BodySite } from '../../core/models/reference-data.models';
 
 @Component({
   selector: 'app-condition-add',
@@ -25,13 +25,17 @@ export class ConditionAddComponent implements OnInit {
 
   selectedBodySiteId: number | null = null;
 
-  diseases: any[] = [];
-  bodySites: any[] = [];
+  diseases: Disease[] = [];
+  bodySites: BodySite[] = [];
 
-  filteredDiseases: any[] = [];
-  filteredBodySites: any[] = [];
+  filteredDiseases: Disease[] = [];
+  filteredBodySites: BodySite[] = [];
 
-  constructor(private http: HttpClient, private encounterService: EncounterSessionService,private popupService: PopupMessageService) {}
+  constructor(
+    private referenceDataService: ReferenceDataService,
+    private encounterService: EncounterSessionService,
+    private popupService: PopupMessageService
+  ) {}
 
   ngOnInit(): void {
     this.patientId = this.encounterService.getPatientNationalId() || '';
@@ -41,33 +45,33 @@ export class ConditionAddComponent implements OnInit {
   }
 
   fetchDiseases() {
-    this.http.get<any[]>(`${BASE_URL}Disease/get-diseases`).subscribe({
+    this.referenceDataService.getDiseases().subscribe({
       next: (res) => {
         this.diseases = res;
         this.filteredDiseases = res;
       },
-      error: (err) => console.error('Error fetching diseases:', err)
+      error: (err) => this.popupService.showFailure('Failed to load diseases. Please try again.')
     });
   }
 
   fetchBodySites() {
-    this.http.get<any[]>(`${BASE_URL}bodySite/Get-All-Body-Sites-Name-Id`).subscribe({
+    this.referenceDataService.getBodySites().subscribe({
       next: (res) => {
         this.bodySites = res;
         this.filteredBodySites = res;
       },
-      error: (err) => console.error('Error fetching body sites:', err)
+      error: (err) => this.popupService.showFailure('Failed to load body sites. Please try again.')
     });
   }
 
   submitCondition() {
     const disease = this.diseases.find(d => d.name.toLowerCase() === this.conditionName.toLowerCase());
-  
+
     if (!disease) {
       this.popupService.showFailure('Please select a valid disease');
       return;
     }
-  
+
     const condition: any = {
       diseasesId: disease.id,
       clinicalStatus: 0,
@@ -75,11 +79,11 @@ export class ConditionAddComponent implements OnInit {
       severity: this.severity,
       note: this.note
     };
-  
+
     if (this.selectedBodySiteId !== null) {
       condition.bodySite = this.selectedBodySiteId;
     }
-  
+
     this.encounterService.addCondition(condition);
     this.popupService.showSuccess('Condition added to encounter!');
   }

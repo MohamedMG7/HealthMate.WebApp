@@ -2,13 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { EncounterSessionService } from '../../services/encounter-session.service';
 import { PopupMessageService } from '../../services/popup-message.service';
 import { SessionService } from '../../services/session.service';
-import { BASE_URL } from '../../services/config';
 import { EncounterLifecycleService } from '../../core/api/encounter-lifecycle.service';
 import { FinalizeEncounterInput } from '../../core/models/encounter-lifecycle.models';
+import { ReferenceDataService } from '../../core/api/reference-data.service';
 
 @Component({
   selector: 'app-encounter-confirmation',
@@ -32,7 +31,7 @@ export class EncounterConfirmationComponent implements OnInit {
 
   constructor(
     public router: Router,
-    private http: HttpClient,
+    private referenceDataService: ReferenceDataService,
     private encounterService: EncounterSessionService,
     private popupService: PopupMessageService,
     private sessionService: SessionService,
@@ -51,7 +50,7 @@ export class EncounterConfirmationComponent implements OnInit {
   }
 
   loadMedicines(): void {
-    this.http.get<any[]>(`${BASE_URL}medicine`).subscribe({
+    this.referenceDataService.getMedicines().subscribe({
       next: (res) => {
         this.medicines = res;
         this.medicineMap = res.reduce((map, med) => {
@@ -60,7 +59,6 @@ export class EncounterConfirmationComponent implements OnInit {
         }, {} as { [id: number]: string });
       },
       error: (err) => {
-        console.error('Error loading medicines:', err);
         this.popupService.showFailure('Failed to load medicine names.');
       }
     });
@@ -71,7 +69,7 @@ export class EncounterConfirmationComponent implements OnInit {
   }
 
   loadDiseases(): void {
-    this.http.get<any[]>(`${BASE_URL}Disease/get-diseases`).subscribe({
+    this.referenceDataService.getDiseases().subscribe({
       next: (res) => {
         this.diseaseMap = res.reduce((map, disease) => {
           map[disease.id] = disease.name;
@@ -83,7 +81,6 @@ export class EncounterConfirmationComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error loading diseases:', err);
         this.popupService.showFailure('Failed to load disease names.');
       }
     });

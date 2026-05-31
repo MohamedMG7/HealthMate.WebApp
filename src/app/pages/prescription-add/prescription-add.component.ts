@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { BASE_URL } from '../../services/config';
 import { EncounterSessionService } from '../../services/encounter-session.service';
 import { RouterModule } from '@angular/router';
 import { PopupMessageService } from '../../services/popup-message.service';
+import { ReferenceDataService } from '../../core/api/reference-data.service';
+import { Medicine } from '../../core/models/reference-data.models';
 
 @Component({
   selector: 'app-prescription-add',
@@ -18,8 +18,8 @@ export class PrescriptionAddComponent implements OnInit {
   patientNationalId: string = '';
   patientName: string = '';
 
-  medicines: any[] = [];
-  medicineMap: { [id: number]: string } = {}; 
+  medicines: Medicine[] = [];
+  medicineMap: { [id: number]: string } = {};
   selectedMedicineId: number | null = null;
 
   dosage: string = '';
@@ -29,7 +29,7 @@ export class PrescriptionAddComponent implements OnInit {
   prescriptionMedicines: any[] = [];
 
   constructor(
-    private http: HttpClient,
+    private referenceDataService: ReferenceDataService,
     private encounterService: EncounterSessionService,
     private popupService: PopupMessageService
   ) {}
@@ -42,16 +42,16 @@ export class PrescriptionAddComponent implements OnInit {
   }
 
   loadMedicines(): void {
-    this.http.get<any[]>(`${BASE_URL}medicine`).subscribe({
+    this.referenceDataService.getMedicines().subscribe({
       next: (res) => {
         this.medicines = res;
-        // lookup map to map the med id with it's name to show in the prescription table 
+        // lookup map to map the med id with it's name to show in the prescription table
         this.medicineMap = res.reduce((map, med) => {
           map[med.id] = med.name;
           return map;
         }, {} as { [id: number]: string });
       },
-      error: (err) => console.error('Error loading medicines:', err)
+      error: (err) => this.popupService.showFailure('Failed to load medicines. Please try again.')
     });
   }
 
@@ -62,10 +62,10 @@ export class PrescriptionAddComponent implements OnInit {
     }
 
     if (this.durationInDays <= 0 || this.frequencyInHours <= 0) {
-      this.popupService.showFailure('يخربيت العبط');
+      this.popupService.showFailure('Duration and frequency must be greater than zero');
       return;
     }
-  
+
     const medicine = {
       medicineId: this.selectedMedicineId,
       dosage: this.dosage,
@@ -78,7 +78,7 @@ export class PrescriptionAddComponent implements OnInit {
     this.refreshPrescriptionTable();
 
     this.popupService.showSuccess('Medicine added to prescription');
-    
+
     // Reset form
     this.selectedMedicineId = null;
     this.dosage = '';
@@ -93,5 +93,4 @@ export class PrescriptionAddComponent implements OnInit {
   getMedicineNameById(id: number): string {
     return this.medicineMap[id] || 'Unknown';
   }
-
 }
