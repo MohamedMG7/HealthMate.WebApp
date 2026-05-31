@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-
-import { BASE_URL } from '../../services/config';
-import { SessionService } from '../../services/session.service';
+import { HealthRecordDetailsService } from '../../core/api/health-record-details.service';
+import { ConditionDetails, MedicineDetails } from '../../core/models/health-record-details.models';
 
 @Component({
   selector: 'app-encounter-details',
@@ -12,7 +10,6 @@ import { SessionService } from '../../services/session.service';
   templateUrl: './encounter-details.component.html',
 })
 export class EncounterDetailsComponent implements OnInit {
-  token: string = '';
   encounterId: string = '';
 
   patientId: string = '';
@@ -24,14 +21,16 @@ export class EncounterDetailsComponent implements OnInit {
   treatmentPlan: string = '';
   note: string = '';
 
-  conditions: any[] = [];
-  prescription: any[] = [];
+  conditions: ConditionDetails[] = [];
+  prescription: MedicineDetails[] = [];
   loadingError: string | null = null;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private sessionService:SessionService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private healthRecordDetailsService: HealthRecordDetailsService
+  ) {}
 
   ngOnInit(): void {
-    this.token = this.sessionService.getToken() || '';
     this.encounterId = this.route.snapshot.paramMap.get('id') || '';
 
     if (this.encounterId) {
@@ -42,30 +41,21 @@ export class EncounterDetailsComponent implements OnInit {
   }
 
   fetchEncounterDetails(): void {
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${this.token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+    this.healthRecordDetailsService.getEncounter(Number(this.encounterId)).subscribe({
+      next: res => {
+        this.patientId = res.patientNationalId;
+        this.patientName = res.patientName;
+        this.doctorName = res.healthCareProviderName;
+        this.date = res.date;
+        this.reasonToVisit = res.reason_To_Visit;
+        this.treatmentPlan = res.treatment_Plan;
+        this.note = res.note;
+        this.conditions = res.conditions || [];
+        this.prescription = res.prescription || [];
+      },
+      error: err => {
+        this.loadingError = 'Failed to load encounter details.';
+      }
     });
-
-    this.http
-      .get<any>(`${BASE_URL}HealthRecord/encounter-details/${this.encounterId}`, { headers })
-      .subscribe({
-        next: (data) => {
-          this.patientId = data.patientNationalId;
-          this.patientName = data.patientName;
-          this.doctorName = data.healthCareProviderName;
-          this.date = data.date;
-          this.reasonToVisit = data.reason_To_Visit;
-          this.treatmentPlan = data.treatment_Plan;
-          this.note = data.note;
-          this.conditions = data.conditions || [];
-          this.prescription = data.prescription || [];
-        },
-        error: (err) => {
-          this.loadingError = 'Failed to load encounter details.';
-          console.error(err);
-        },
-      });
   }
 }

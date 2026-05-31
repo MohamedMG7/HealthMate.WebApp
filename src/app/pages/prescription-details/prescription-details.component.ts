@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-
-import { BASE_URL } from '../../services/config';
-import { SessionService } from '../../services/session.service';
+import { HealthRecordDetailsService } from '../../core/api/health-record-details.service';
+import { MedicineDetails } from '../../core/models/health-record-details.models';
 
 @Component({
   selector: 'app-prescription-details',
@@ -13,20 +11,21 @@ import { SessionService } from '../../services/session.service';
   styleUrls: ['./prescription-details.component.css']
 })
 export class PrescriptionDetailsComponent implements OnInit {
-  token: string = '';
   prescriptionId: string = '';
 
   patientId: string = '';
   patientName: string = '';
   prescriptionDate: string = '';
   diseaseName: string = '';
-  medicines: any[] = [];
+  medicines: MedicineDetails[] = [];
   loadingError: string | null = null;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private sessionService: SessionService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private healthRecordDetailsService: HealthRecordDetailsService
+  ) {}
 
   ngOnInit(): void {
-    this.token =this.sessionService.getToken() || '';
     this.prescriptionId = this.route.snapshot.paramMap.get('id') || '';
 
     if (this.prescriptionId) {
@@ -37,25 +36,18 @@ export class PrescriptionDetailsComponent implements OnInit {
   }
 
   loadPrescriptionDetails(): void {
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${this.token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
+    this.healthRecordDetailsService.getPrescription(Number(this.prescriptionId)).subscribe({
+      next: res => {
+        this.patientId = res.patientNationalId || '';
+        this.patientName = res.patientName || '';
+        this.prescriptionDate = this.formatDate(res.prescriptionDate);
+        this.diseaseName = res.diseaseName || '';
+        this.medicines = res.medicines || [];
+      },
+      error: err => {
+        this.loadingError = `Error loading prescription details: ${err.statusText || err.message}`;
+      }
     });
-
-    this.http.get<any>(`${BASE_URL}HealthRecord/prescription-details/${this.prescriptionId}`, { headers })
-      .subscribe({
-        next: data => {
-          this.patientId = data.patientNationalId || '';
-          this.patientName = data.patientName || '';
-          this.prescriptionDate = this.formatDate(data.prescriptionDate);
-          this.diseaseName = data.diseaseName || '';
-          this.medicines = data.medicines || [];
-        },
-        error: err => {
-          this.loadingError = `Error loading prescription details: ${err.statusText || err.message}`;
-        }
-      });
   }
 
   formatDate(dateStr: string): string {
