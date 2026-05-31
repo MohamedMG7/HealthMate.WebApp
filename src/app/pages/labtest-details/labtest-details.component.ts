@@ -1,10 +1,8 @@
 // labtest-details.component.ts
 import { Component, OnInit } from '@angular/core';
-
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BASE_URL } from '../../services/config';
-import { SessionService } from '../../services/session.service';
+import { HealthRecordDetailsService } from '../../core/api/health-record-details.service';
+import { LabTestResult } from '../../core/models/health-record-details.models';
 
 @Component({
   selector: 'app-labtest-details',
@@ -15,17 +13,18 @@ import { SessionService } from '../../services/session.service';
 })
 export class LabtestDetailsComponent implements OnInit {
   labTestId: string = '';
-  token: string = '';
   patientId: string = '';
   patientName: string = '';
   labTestName: string = '';
-  labTestResults: any[] = [];
+  labTestResults: LabTestResult[] = [];
   loadingError: string | null = null;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private sessionService:SessionService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private healthRecordDetailsService: HealthRecordDetailsService
+  ) {}
 
   ngOnInit(): void {
-    this.token = this.sessionService.getToken() || '';
     this.labTestId = this.route.snapshot.paramMap.get('id') || '';
 
     if (this.labTestId) {
@@ -34,25 +33,16 @@ export class LabtestDetailsComponent implements OnInit {
   }
 
   loadLabTestDetails(): void {
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
+    this.healthRecordDetailsService.getLabTest(Number(this.labTestId)).subscribe({
+      next: res => {
+        this.patientId = res.patientNationalId;
+        this.patientName = res.patientName;
+        this.labTestName = res.labTestName;
+        this.labTestResults = res.results || [];
+      },
+      error: err => {
+        this.loadingError = `Error loading data: ${err.statusText || err.message}`;
+      }
     });
-
-    this.http.get<any>(`${BASE_URL}HealthRecord/lab-test-details/${this.labTestId}`, { headers })
-      .subscribe({
-        next: data => {
-          console.log('Lab Test Details:', data);
-          this.patientId = data.patientNationalId;
-          this.patientName = data.patientName;
-          this.labTestName = data.labTestName;
-          this.labTestResults = data.results || [];
-        },
-        error: err => {
-          console.error('Fetch error:', err);
-          this.loadingError = `Error loading data: ${err.statusText || err.message}`;
-        }
-      });
   }
 }
