@@ -19,7 +19,4 @@ export class ImagingTabComponent {
     this.router.navigate(['/medical-image-details', imageId]);
   }
 
-  addImage(): void {
-    this.router.navigate(['/imaging-add']);
-  }
 }

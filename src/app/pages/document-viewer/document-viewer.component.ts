@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 
 import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { HttpClient } from '@angular/common/http';
+import { DocumentService } from '../../core/api/document.service';
 
 @Component({
   selector: 'app-document-viewer',
@@ -30,7 +30,7 @@ export class DocumentViewerComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private http: HttpClient,
+    private documentService: DocumentService,
     private sanitizer: DomSanitizer
   ) {}
 
@@ -40,9 +40,7 @@ export class DocumentViewerComponent implements OnInit {
     this.documentPath = queryParams['path'] || '';
 
     if (this.documentPath) {
-      const apiUrl = `https://healthmate.runasp.net/api/Document/download-file?filePath=${encodeURIComponent(this.documentPath)}`;
-
-      this.http.get(apiUrl, { responseType: 'blob' }).subscribe({
+      this.documentService.download(this.documentPath).subscribe({
         next: (blob) => {
           const objectURL = URL.createObjectURL(blob);
           this.documentUrl = this.sanitizer.bypassSecurityTrustUrl(objectURL);

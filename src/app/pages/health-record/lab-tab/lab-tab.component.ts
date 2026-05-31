@@ -19,7 +19,4 @@ export class LabTabComponent {
     this.router.navigate(['/labtest-details', labTestId]);
   }
 
-  addLabTest(): void {
-    this.router.navigate(['/lab-test-add']);
-  }
 }
