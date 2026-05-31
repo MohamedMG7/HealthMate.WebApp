@@ -14,7 +14,6 @@ import { authGuard } from './services/auth.guard';
 import { PrescriptionDetailsComponent } from './pages/prescription-details/prescription-details.component';
 import { ConditionAddComponent } from './pages/condition-add/condition-add.component';
 import { PrescriptionAddComponent } from './pages/prescription-add/prescription-add.component';
-import { BestProgrammerEverComponent } from './pages/best-programmer-ever/best-programmer-ever.component';
 import { TrafficReportComponent } from './pages/traffic-report/traffic-report.component';
 import { MessageComposeComponent } from './pages/message-compose/message-compose.component';
 import { MessageDetailsComponent } from './pages/message-details/message-details.component';
@@ -55,7 +54,6 @@ export const routes: Routes = [
       { path:'prescription-details/:id', component:PrescriptionDetailsComponent},
       { path: 'condition-add', component: ConditionAddComponent },
       { path: 'prescription-add', component: PrescriptionAddComponent},
-      { path: 'best-programmer-ever', component: BestProgrammerEverComponent},
       { path: 'traffic-report', component: TrafficReportComponent},
       { path: 'settings', component:SettingsComponent},
       { path: 'message-compose', component:MessageComposeComponent},
